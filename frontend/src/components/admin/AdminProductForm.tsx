@@ -1,0 +1,717 @@
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { ArrowLeft, Upload, X } from "lucide-react";
+import type {
+  Product,
+  Lang,
+  AdminFormState,
+  Category,
+  VariantDraft,
+  VariantOptionDraft,
+  Audience,
+} from "../../types";
+
+interface AdminProductFormProps {
+  onSave: (product: Product) => void;
+  onCancel: () => void;
+  lang: Lang;
+  authToken: string;
+  categories: Category[];
+  categoriesLoading?: boolean;
+  categoriesError?: string | null;
+  apiUrl: string;
+}
+
+export const AdminProductForm = ({
+  onSave,
+  onCancel,
+  lang,
+  authToken,
+  categories,
+  categoriesLoading = false,
+  categoriesError = null,
+  apiUrl,
+}: AdminProductFormProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isMM = lang === "mm";
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+
+  const makeId = () =>
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const [formData, setFormData] = useState<AdminFormState>({
+    name_en: "",
+    name_mm: "",
+    description_en: "",
+    description_mm: "",
+    price: "",
+    stock: "",
+    brand: "",
+    categoryId: "",
+    audience: "all",
+    imageUrl: "",
+    variants: [],
+  });
+
+  useEffect(() => {
+    if (categoriesLoading || !categories.length) return;
+    setFormData((current) =>
+      current.categoryId
+        ? current
+        : {
+            ...current,
+            categoryId: categories[0].id,
+          },
+    );
+  }, [categories, categoriesLoading]);
+
+  const addVariant = () => {
+    setFormData((current) => ({
+      ...current,
+      variants: [
+        ...current.variants,
+        {
+          id: makeId(),
+          sku: "",
+          name_en: "",
+          name_mm: "",
+          priceOverride: "",
+          stock: "",
+          options: [],
+        },
+      ],
+    }));
+  };
+
+  const removeVariant = (variantId: string) => {
+    setFormData((current) => ({
+      ...current,
+      variants: current.variants.filter((variant) => variant.id !== variantId),
+    }));
+  };
+
+  const updateVariantField = (
+    variantId: string,
+    field: keyof Omit<VariantDraft, "id" | "options">,
+    value: string,
+  ) => {
+    setFormData((current) => ({
+      ...current,
+      variants: current.variants.map((variant) =>
+        variant.id === variantId ? { ...variant, [field]: value } : variant,
+      ),
+    }));
+  };
+
+  const addVariantOption = (variantId: string) => {
+    setFormData((current) => ({
+      ...current,
+      variants: current.variants.map((variant) =>
+        variant.id === variantId
+          ? {
+              ...variant,
+              options: [
+                ...variant.options,
+                { id: makeId(), type: "", value_en: "", value_mm: "" },
+              ],
+            }
+          : variant,
+      ),
+    }));
+  };
+
+  const updateVariantOption = (
+    variantId: string,
+    optionId: string,
+    field: keyof Omit<VariantOptionDraft, "id">,
+    value: string,
+  ) => {
+    setFormData((current) => ({
+      ...current,
+      variants: current.variants.map((variant) =>
+        variant.id === variantId
+          ? {
+              ...variant,
+              options: variant.options.map((option) =>
+                option.id === optionId ? { ...option, [field]: value } : option,
+              ),
+            }
+          : variant,
+      ),
+    }));
+  };
+
+  const removeVariantOption = (variantId: string, optionId: string) => {
+    setFormData((current) => ({
+      ...current,
+      variants: current.variants.map((variant) =>
+        variant.id === variantId
+          ? {
+              ...variant,
+              options: variant.options.filter(
+                (option) => option.id !== optionId,
+              ),
+            }
+          : variant,
+      ),
+    }));
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+
+    if (!authToken) {
+      alert(
+        isMM
+          ? "Admin အကောင့်ဖြင့် ဝင်ရောက်ပါ"
+          : "Please log in as admin first.",
+      );
+      return;
+    }
+
+    const files = fileInputRef.current?.files;
+    if (!files || files.length === 0) {
+      alert(
+        isMM
+          ? "ဓာတ်ပုံတစ်ပုံအနည်းဆုံး တင်ပေးပါ"
+          : "Please attach at least one product image.",
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const price = Number.parseFloat(formData.price);
+    const normalizedCategoryId = formData.categoryId || categories[0]?.id;
+    const normalizedAudience = formData.audience ?? "all";
+    const normalizedStock = Number.parseInt(formData.stock || "0", 10);
+
+    if (!normalizedCategoryId) {
+      alert(isMM ? "Category မရှိသေးပါ" : "Please select a category.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const variantPayload = formData.variants.length
+      ? formData.variants
+          .filter(
+            (variant) => variant.sku && variant.name_en && variant.name_mm,
+          )
+          .map((variant) => ({
+            sku: variant.sku,
+            name_en: variant.name_en,
+            name_mm: variant.name_mm,
+            priceOverride: variant.priceOverride
+              ? Number(variant.priceOverride)
+              : undefined,
+            stock: Number(variant.stock) || 0,
+            options: variant.options
+              .filter(
+                (option) => option.type && option.value_en && option.value_mm,
+              )
+              .map((option) => ({
+                type: option.type,
+                value_en: option.value_en,
+                value_mm: option.value_mm,
+              })),
+          }))
+      : undefined;
+
+    try {
+      const formPayload = new FormData();
+      formPayload.append("name_en", formData.name_en);
+      formPayload.append("name_mm", formData.name_mm);
+      formPayload.append("description_en", formData.description_en);
+      formPayload.append("description_mm", formData.description_mm);
+      formPayload.append("price", price.toString());
+      formPayload.append(
+        "stock",
+        Number.isNaN(normalizedStock) ? "0" : normalizedStock.toString(),
+      );
+      formPayload.append("categoryId", normalizedCategoryId);
+      formPayload.append("audience", normalizedAudience);
+      if (variantPayload) {
+        formPayload.append("variants", JSON.stringify(variantPayload));
+      }
+      Array.from(files).forEach((file) => formPayload.append("images", file));
+
+      const response = await axios.post(`${apiUrl}/products`, formPayload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      const savedProduct = response.data as Product;
+      onSave(savedProduct);
+      setFormData({
+        name_en: "",
+        name_mm: "",
+        description_en: "",
+        description_mm: "",
+        price: "",
+        stock: "",
+        brand: "",
+        categoryId: categories[0]?.id ?? "",
+        audience: "all",
+        imageUrl: "",
+        variants: [],
+      });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      setUploadPreview(null);
+    } catch (error) {
+      console.error("Product creation failed", error);
+      alert(
+        isMM ? "ပစ္စည်းထည့်ခြင်း မအောင်မြင်ပါ" : "Failed to create product.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center justify-between mb-12">
+        <button
+          onClick={onCancel}
+          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors text-xs uppercase tracking-widest font-bold"
+        >
+          <ArrowLeft size={16} /> {isMM ? "ပြန်သွားရန်" : "Back"}
+        </button>
+        <h2 className="text-2xl tracking-[0.3em] font-light uppercase">
+          {isMM ? "ပစ္စည်းအသစ်ထည့်ရန်" : "Add New Product"}
+        </h2>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-12">
+        {/* Language Split Sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="space-y-6">
+            <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400 border-b pb-2">
+              English Details
+            </h3>
+            <div className="space-y-4">
+              <input
+                required
+                placeholder="Product Name"
+                className="w-full border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm"
+                value={formData.name_en}
+                onChange={(event) =>
+                  setFormData({ ...formData, name_en: event.target.value })
+                }
+              />
+              <textarea
+                placeholder="Description"
+                rows={3}
+                className="w-full border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm resize-none"
+                value={formData.description_en}
+                onChange={(event) =>
+                  setFormData({
+                    ...formData,
+                    description_en: event.target.value,
+                  })
+                }
+              />
+            </div>
+          </div>
+          <div className="space-y-6">
+            <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400 border-b pb-2">
+              Burmese Details
+            </h3>
+            <div className="space-y-4">
+              <input
+                required
+                placeholder="ပစ္စည်းအမည်"
+                className="w-full border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm font-myanmar"
+                value={formData.name_mm}
+                onChange={(event) =>
+                  setFormData({ ...formData, name_mm: event.target.value })
+                }
+              />
+              <textarea
+                placeholder="အသေးစိတ်ဖော်ပြချက်"
+                rows={3}
+                className="w-full border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm resize-none font-myanmar"
+                value={formData.description_mm}
+                onChange={(event) =>
+                  setFormData({
+                    ...formData,
+                    description_mm: event.target.value,
+                  })
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Generic Info */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <input
+            required
+            type="number"
+            step="0.01"
+            placeholder="Price (USD)"
+            className="border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm"
+            value={formData.price}
+            onChange={(event) =>
+              setFormData({ ...formData, price: event.target.value })
+            }
+          />
+          <input
+            type="number"
+            placeholder={isMM ? "စုစုပေါင်း စတော့" : "Stock"}
+            className="border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm"
+            value={formData.stock}
+            onChange={(event) =>
+              setFormData({ ...formData, stock: event.target.value })
+            }
+          />
+          <input
+            placeholder="Brand Name"
+            className="border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm"
+            value={formData.brand}
+            onChange={(event) =>
+              setFormData({ ...formData, brand: event.target.value })
+            }
+          />
+          <select
+            className="border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm bg-transparent"
+            value={formData.audience}
+            onChange={(event) =>
+              setFormData({
+                ...formData,
+                audience: event.target.value as Audience,
+              })
+            }
+          >
+            <option value="all">{isMM ? "အားလုံး" : "All"}</option>
+            <option value="man">{isMM ? "အမျိုးသား" : "Man"}</option>
+            <option value="woman">{isMM ? "အမျိုးသမီး" : "Woman"}</option>
+            <option value="child">{isMM ? "ကလေး" : "Child"}</option>
+          </select>
+          <select
+            className="border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm bg-transparent"
+            value={formData.categoryId}
+            onChange={(event) =>
+              setFormData({
+                ...formData,
+                categoryId: event.target.value,
+              })
+            }
+            disabled={categoriesLoading || !categories.length}
+          >
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {isMM ? category.name_mm : category.name_en}
+              </option>
+            ))}
+          </select>
+          {categoriesLoading && (
+            <p className="text-xs text-slate-400">
+              {isMM
+                ? "အမျိုးအစားများကို ရယူနေပါသည်..."
+                : "Loading categories..."}
+            </p>
+          )}
+          {!categoriesLoading && !categories.length && (
+            <p className="text-xs text-red-500">
+              {isMM
+                ? "အမျိုးအစားဒေတာ မရရှိသေးပါ"
+                : "No categories available. Please seed categories first."}
+            </p>
+          )}
+          {categoriesError && (
+            <p className="text-xs text-red-500">{categoriesError}</p>
+          )}
+        </div>
+
+        {/* Image / Links */}
+        <div className="space-y-6">
+          <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400 border-b pb-2">
+            Media & Social Links
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div
+              className="border-2 border-dashed border-slate-100 rounded-xl p-8 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer group relative"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="text-slate-300 group-hover:text-pink-500 mb-4 transition-colors" />
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+                {isMM ? "ဓာတ်ပုံရွေးရန် နှိပ်ပါ" : "Click to Select Images"}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-2">
+                {isMM ? "JPEG/PNG 5MB အထိ" : "JPEG/PNG up to 5MB"}
+              </p>
+              {uploadPreview && (
+                <div className="mt-4 w-full max-w-[200px] aspect-square rounded-xl overflow-hidden">
+                  <img
+                    src={uploadPreview}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  handleImageSelect(event);
+                  event.stopPropagation();
+                }}
+              />
+              <input
+                type="text"
+                placeholder={
+                  isMM
+                    ? "Cloudinary URL ဖြင့် တင်မည်"
+                    : "Or Paste Cloudinary URL"
+                }
+                className="mt-4 w-full text-center border-none bg-transparent outline-none text-xs"
+                value={formData.imageUrl}
+                onChange={(event) =>
+                  setFormData({ ...formData, imageUrl: event.target.value })
+                }
+                onClick={(event) => event.stopPropagation()}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400 border-b pb-2 flex-1">
+              {isMM ? "အမျိုးမျိုး အရွယ်အစား & အရောင်" : "Product Variants"}
+            </h3>
+            <button
+              type="button"
+              onClick={addVariant}
+              className="ml-4 px-4 py-2 text-xs font-semibold tracking-[0.2em] uppercase border border-slate-200 rounded-full hover:border-slate-900 transition-colors"
+            >
+              {isMM ? "Variant ထည့်ရန်" : "Add Variant"}
+            </button>
+          </div>
+
+          {formData.variants.length === 0 ? (
+            <p className="text-xs text-slate-400">
+              {isMM
+                ? 'Variant များ မရှိသေးပါ။ ထည့်သွင်းချင်ပါက "Add Variant" ကိုနှိပ်ပါ။'
+                : "No variants yet. Click “Add Variant” to define size/color combinations."}
+            </p>
+          ) : (
+            <div className="space-y-6">
+              {formData.variants.map((variant, index) => (
+                <div
+                  key={variant.id}
+                  className="border border-slate-100 rounded-2xl p-6 shadow-sm"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-xs uppercase tracking-[0.3em] text-slate-500">
+                      {isMM ? `Variant ${index + 1}` : `Variant ${index + 1}`}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => removeVariant(variant.id)}
+                      className="text-slate-300 hover:text-red-500 transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input
+                      required
+                      placeholder="SKU"
+                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                      value={variant.sku}
+                      onChange={(event) =>
+                        updateVariantField(
+                          variant.id,
+                          "sku",
+                          event.target.value,
+                        )
+                      }
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder={
+                        isMM ? "စျေးနှုန်း (အကွာအဝေး)" : "Price Override"
+                      }
+                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                      value={variant.priceOverride}
+                      onChange={(event) =>
+                        updateVariantField(
+                          variant.id,
+                          "priceOverride",
+                          event.target.value,
+                        )
+                      }
+                    />
+                    <input
+                      type="number"
+                      placeholder={isMM ? "စာရင်းရှိ ပမာဏ" : "Variant Stock"}
+                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                      value={variant.stock}
+                      onChange={(event) =>
+                        updateVariantField(
+                          variant.id,
+                          "stock",
+                          event.target.value,
+                        )
+                      }
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <input
+                      placeholder={
+                        isMM ? "အမည် (English)" : "Variant Name (English)"
+                      }
+                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                      value={variant.name_en}
+                      onChange={(event) =>
+                        updateVariantField(
+                          variant.id,
+                          "name_en",
+                          event.target.value,
+                        )
+                      }
+                    />
+                    <input
+                      placeholder={
+                        isMM ? "အမည် (မြန်မာ)" : "Variant Name (Burmese)"
+                      }
+                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900 font-myanmar"
+                      value={variant.name_mm}
+                      onChange={(event) =>
+                        updateVariantField(
+                          variant.id,
+                          "name_mm",
+                          event.target.value,
+                        )
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] tracking-[0.2em] uppercase text-slate-400 font-bold">
+                        {isMM ? "ရွေးချယ်စရာ Option" : "Variant Options"}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => addVariantOption(variant.id)}
+                        className="text-xs uppercase tracking-[0.2em] text-pink-600"
+                      >
+                        {isMM ? "Option ထည့်ရန်" : "Add Option"}
+                      </button>
+                    </div>
+                    {variant.options.length === 0 ? (
+                      <p className="text-xs text-slate-400">
+                        {isMM
+                          ? "ဒီ Variant အတွက် option မရှိသေးပါ။"
+                          : "No options yet for this variant."}
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {variant.options.map((option) => (
+                          <div
+                            key={option.id}
+                            className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center"
+                          >
+                            <input
+                              placeholder={
+                                isMM
+                                  ? "အမျိုးအစား (size/color)"
+                                  : "Type (size/color)"
+                              }
+                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                              value={option.type}
+                              onChange={(event) =>
+                                updateVariantOption(
+                                  variant.id,
+                                  option.id,
+                                  "type",
+                                  event.target.value,
+                                )
+                              }
+                            />
+                            <input
+                              placeholder={
+                                isMM ? "တန်ဖိုး (English)" : "Value (English)"
+                              }
+                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                              value={option.value_en}
+                              onChange={(event) =>
+                                updateVariantOption(
+                                  variant.id,
+                                  option.id,
+                                  "value_en",
+                                  event.target.value,
+                                )
+                              }
+                            />
+                            <input
+                              placeholder={
+                                isMM ? "တန်ဖိုး (မြန်မာ)" : "Value (Burmese)"
+                              }
+                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900 font-myanmar"
+                              value={option.value_mm}
+                              onChange={(event) =>
+                                updateVariantOption(
+                                  variant.id,
+                                  option.id,
+                                  "value_mm",
+                                  event.target.value,
+                                )
+                              }
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removeVariantOption(variant.id, option.id)
+                              }
+                              className="text-slate-300 hover:text-red-500 transition-colors justify-self-end"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-slate-900 text-white py-4 rounded-full text-xs font-bold uppercase tracking-[0.3em] hover:bg-pink-600 transition-all shadow-xl shadow-slate-200"
+          disabled={isSubmitting}
+        >
+          {isSubmitting
+            ? isMM
+              ? "Uploading…"
+              : "Uploading…"
+            : isMM
+              ? "သိမ်းဆည်းမည်"
+              : "Save Product"}
+        </button>
+      </form>
+    </div>
+  );
+};

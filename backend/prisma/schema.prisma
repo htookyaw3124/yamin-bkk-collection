@@ -1,0 +1,92 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Audience {
+  man
+  woman
+  child
+  all
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name_en   String
+  name_mm   String
+  slug      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Brand {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  logo_url  String?
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id             String         @id @default(uuid())
+  name_en        String
+  name_mm        String
+  description_en String?
+  description_mm String?
+  price          Decimal        @db.Decimal(10, 2)
+  stock          Int            @default(0)
+  audience       Audience       @default(all)
+  
+  category       Category       @relation(fields: [categoryId], references: [id])
+  categoryId     String
+  
+  brand          Brand?         @relation(fields: [brandId], references: [id])
+  brandId        String?
+  
+  images         ProductImage[]
+  variants       ProductVariant[]
+  
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model ProductVariant {
+  id             String          @id @default(uuid())
+  sku            String          @unique
+  name_en        String
+  name_mm        String
+  priceOverride  Decimal?        @db.Decimal(10, 2)
+  stock          Int             @default(0)
+  product        Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId      String
+  options        VariantOption[]
+  images         ProductImage[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model VariantOption {
+  id         String          @id @default(uuid())
+  type       String
+  value_en   String
+  value_mm   String
+  variant    ProductVariant  @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId  String
+}
+
+model ProductImage {
+  id         String          @id @default(uuid())
+  url        String
+  publicId   String
+  isMain     Boolean         @default(false)
+  
+  product    Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  variant    ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId  String?
+}

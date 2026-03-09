@@ -1,0 +1,58 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: yamin_api
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+    networks:
+      - yamin_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://yaminbkk.truthtech.website/api
+        VITE_TIKTOK_URL: ${VITE_TIKTOK_URL:-https://www.tiktok.com/@yaminbkk}
+        VITE_MESSENGER_URL: ${VITE_MESSENGER_URL:-https://m.me/yaminbkk}
+        VITE_TELEGRAM_URL: ${VITE_TELEGRAM_URL:-https://t.me/yaminbkk}
+    container_name: yamin_frontend
+    restart: unless-stopped
+    networks:
+      - yamin_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: yamin_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - api
+      - frontend
+    networks:
+      - yamin_network
+
+  certbot:
+    image: certbot/certbot
+    container_name: yamin_certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+networks:
+  yamin_network:
+    driver: bridge

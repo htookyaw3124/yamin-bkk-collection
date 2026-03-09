@@ -1,0 +1,79 @@
+﻿src/components/admin/AdminCategoriesPanel.tsx(4,10): error TS2305: Module '"../../types"' has no exported member 'Category'.
+src/components/admin/AdminDashboard.tsx(2,10): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/admin/AdminDashboard.tsx(2,19): error TS2305: Module '"../../types"' has no exported member 'Category'.
+src/components/admin/AdminGate.tsx(1,10): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/admin/AdminLayout.tsx(3,10): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/admin/AdminLayout.tsx(3,19): error TS2305: Module '"../../types"' has no exported member 'Category'.
+src/components/admin/AdminLayout.tsx(3,29): error TS2305: Module '"../../types"' has no exported member 'Lang'.
+src/components/admin/AdminProductForm.tsx(12,3): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/admin/AdminProductForm.tsx(13,3): error TS2305: Module '"../../types"' has no exported member 'Lang'.
+src/components/admin/AdminProductForm.tsx(14,3): error TS2305: Module '"../../types"' has no exported member 'Category'.
+src/components/admin/AdminProductForm.tsx(15,3): error TS2305: Module '"../../types"' has no exported member 'AdminFormState'.
+src/components/admin/AdminProductForm.tsx(16,3): error TS2305: Module '"../../types"' has no exported member 'VariantDraft'.
+src/components/admin/AdminProductForm.tsx(17,3): error TS2724: '"../../types"' has no exported member named 'VariantOptionDraft'. Did you mean 'VariantOption'?
+src/components/admin/AdminProductForm.tsx(18,3): error TS2305: Module '"../../types"' has no exported member 'Audience'.
+src/components/admin/AdminProductForm.tsx(69,18): error TS7006: Parameter 'current' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(80,18): error TS7006: Parameter 'current' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(98,18): error TS7006: Parameter 'current' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(100,42): error TS7006: Parameter 'variant' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(109,18): error TS7006: Parameter 'current' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(111,39): error TS7006: Parameter 'variant' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(118,18): error TS7006: Parameter 'current' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(120,39): error TS7006: Parameter 'variant' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(140,18): error TS7006: Parameter 'current' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(142,39): error TS7006: Parameter 'variant' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(146,45): error TS7006: Parameter 'option' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(156,18): error TS7006: Parameter 'current' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(158,39): error TS7006: Parameter 'variant' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(163,18): error TS7006: Parameter 'option' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(217,14): error TS7006: Parameter 'variant' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(219,17): error TS7006: Parameter 'variant' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(229,18): error TS7006: Parameter 'option' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(231,21): error TS7006: Parameter 'option' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(572,39): error TS7006: Parameter 'variant' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(572,48): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/admin/AdminProductForm.tsx(687,47): error TS7006: Parameter 'option' implicitly has an 'any' type.
+src/components/admin/AdminProductsPanel.tsx(4,10): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/admin/AdminProductsPanel.tsx(4,19): error TS2305: Module '"../../types"' has no exported member 'Category'.
+src/components/admin/AdminProductsPanel.tsx(4,29): error TS2305: Module '"../../types"' has no exported member 'Lang'.
+src/components/admin/AdminProductsPanel.tsx(4,35): error TS2305: Module '"../../types"' has no exported member 'Audience'.
+src/components/common/LanguageToggle.tsx(2,10): error TS2305: Module '"../../types"' has no exported member 'Lang'.
+src/components/common/SocialButton.tsx(1,10): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/shop/ProductCard.tsx(10,10): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/shop/ProductCard.tsx(10,19): error TS2305: Module '"../../types"' has no exported member 'Lang'.
+src/components/shop/ProductCard.tsx(33,44): error TS2339: Property 'brand' does not exist on type 'Product'.
+src/components/shop/ProductCard.tsx(64,29): error TS2339: Property 'messengerUrl' does not exist on type 'Product'.
+src/components/shop/ProductCard.tsx(70,29): error TS2339: Property 'telegramUrl' does not exist on type 'Product'.
+src/components/shop/ProductCard.tsx(82,29): error TS2339: Property 'tiktokUrl' does not exist on type 'Product'.
+src/components/shop/ProductDetail.tsx(10,10): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/shop/ProductDetail.tsx(10,19): error TS2305: Module '"../../types"' has no exported member 'Lang'.
+src/components/shop/ProductDetail.tsx(40,44): error TS2339: Property 'brand' does not exist on type 'Product'.
+src/components/shop/ProductDetail.tsx(168,31): error TS2339: Property 'messengerUrl' does not exist on type 'Product'.
+src/components/shop/ProductDetail.tsx(169,38): error TS2339: Property 'messengerUrl' does not exist on type 'Product'.
+src/components/shop/ProductDetail.tsx(180,31): error TS2339: Property 'telegramUrl' does not exist on type 'Product'.
+src/components/shop/ProductDetail.tsx(181,51): error TS2339: Property 'telegramUrl' does not exist on type 'Product'.
+src/components/shop/ProductDetail.tsx(201,35): error TS2339: Property 'tiktokUrl' does not exist on type 'Product'.
+src/components/shop/ShopView.tsx(2,3): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/shop/ShopView.tsx(3,3): error TS2305: Module '"../../types"' has no exported member 'Lang'.
+src/components/shop/ShopView.tsx(4,3): error TS2305: Module '"../../types"' has no exported member 'CategoryFilter'.
+src/components/shop/ShopView.tsx(5,3): error TS2305: Module '"../../types"' has no exported member 'ForFilter'.
+src/components/shop/ShopView.tsx(6,3): error TS2305: Module '"../../types"' has no exported member 'CATEGORIES'.
+src/components/shop/ShopView.tsx(7,3): error TS2305: Module '"../../types"' has no exported member 'FOR_FILTERS'.
+src/components/shop/ShopView.tsx(44,32): error TS7006: Parameter 'cat' implicitly has an 'any' type.
+src/components/shop/ShopView.tsx(64,33): error TS7006: Parameter 'filter' implicitly has an 'any' type.
+src/pages/ProductList.tsx(15,3): error TS2305: Module '"../types"' has no exported member 'Lang'.
+src/pages/ProductList.tsx(16,3): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/pages/ProductList.tsx(17,3): error TS2305: Module '"../types"' has no exported member 'Category'.
+src/pages/ProductList.tsx(18,3): error TS2305: Module '"../types"' has no exported member 'CategoryFilter'.
+src/pages/ProductList.tsx(19,3): error TS2305: Module '"../types"' has no exported member 'ForFilter'.
+src/pages/ProductList.tsx(20,3): error TS2305: Module '"../types"' has no exported member 'FOR_FILTERS'.
+src/pages/ProductList.tsx(21,3): error TS2305: Module '"../types"' has no exported member 'CATEGORIES'.
+src/pages/ProductList.tsx(288,26): error TS7006: Parameter 'current' implicitly has an 'any' type.
+src/pages/ProductList.tsx(410,39): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/pages/ProductList.tsx(410,63): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/pages/ProductList.tsx(431,37): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/types/index.ts(1,10): error TS1484: 'ComponentType' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/utils/helpers.ts(2,10): error TS2305: Module '"../types"' has no exported member 'ProductCategoryValue'.
+src/utils/helpers.ts(2,32): error TS1484: 'Product' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/utils/helpers.ts(2,41): error TS2305: Module '"../types"' has no exported member 'CategoryFilter'.
+src/utils/helpers.ts(53,46): error TS2339: Property 'brand' does not exist on type 'Product'.
