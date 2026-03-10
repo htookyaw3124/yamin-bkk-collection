@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   MessageCircle,
@@ -22,6 +23,7 @@ export const ProductDetail = ({
   lang,
   onClose,
 }: ProductDetailProps) => {
+  const { t } = useTranslation();
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     product?.variants?.[0]?.id ?? null,
   );
@@ -61,7 +63,7 @@ export const ProductDetail = ({
           className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors text-[10px] uppercase tracking-[0.2em] font-bold"
         >
           <ArrowLeft size={14} />{" "}
-          {isMM ? "ဆိုင်သို့ပြန်သွားရန်" : "Back to Shop"}
+          {t("backToShop")}
         </button>
       </div>
 
@@ -112,7 +114,7 @@ export const ProductDetail = ({
 
             <div className="space-y-4 pt-8 border-t border-slate-100">
               <p className="text-[10px] tracking-[0.2em] uppercase text-slate-400 font-bold">
-                {isMM ? "အသေးစိတ်အချက်အလက်များ" : "Details"}
+                {t("details")}
               </p>
               <p
                 className={`text-slate-600 leading-relaxed ${
@@ -126,7 +128,7 @@ export const ProductDetail = ({
             {product.variants?.length ? (
               <div className="space-y-4 pt-8 border-t border-slate-100">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-slate-400 font-bold">
-                  {isMM ? "အမျိုးမျိုး ရွေးချယ်မှုများ" : "Available Variants"}
+                  {t("availableVariants")}
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {product.variants.map((variant) => (
@@ -163,7 +165,7 @@ export const ProductDetail = ({
             <div className="space-y-6 pt-12 border-t border-slate-100">
               <div className="space-y-4">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-slate-400 font-bold">
-                  {isMM ? "ယခုပင်မှာယူလိုက်ပါ" : "Order Now via Social"}
+                  {t("orderNowViaSocial")}
                 </p>
                 <div className="flex gap-4">
                   <a
@@ -209,10 +211,10 @@ export const ProductDetail = ({
                 <div
                   className={`w-1.5 h-1.5 rounded-full ${inStock ? "bg-emerald-500" : "bg-purple-500"}`}
                 />
-                {inStock ? "In Stock" : "Pre-Order"}
+                {t(inStock ? "inStock" : "preOrder")}
               </div>
               <div className="flex items-center gap-2">
-                <Globe size={12} /> Shipping from BKK
+                <Globe size={12} /> {t("shippingFromBKK")}
               </div>
             </div>
           </div>

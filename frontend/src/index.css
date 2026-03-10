@@ -27,4 +27,45 @@
   }
 }
 
+/* Gradient separator line */
+.gradient-separator {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(236, 72, 153, 0.3) 30%,
+    rgba(236, 72, 153, 0.5) 50%,
+    rgba(236, 72, 153, 0.3) 70%,
+    transparent 100%
+  );
+}
+
+/* Filter chip glassmorphism */
+.filter-chip {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-chip:hover {
+  transform: translateY(-1px);
+}
+
+.filter-chip-active {
+  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+  position: relative;
+}
+
+.filter-chip-active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ec4899, transparent);
+  border-radius: 2px;
+}
+
 /* Ensure font is loaded via Google Fonts in index.html */

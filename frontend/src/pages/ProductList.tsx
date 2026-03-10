@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
+import i18n from "../lib/i18n";
 import {
   Route,
   Routes,
@@ -36,6 +37,7 @@ const ProductDetailRoute = ({
   lang: Lang;
   isLoading: boolean;
 }) => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const product = products.find((p) => p.id === id);
@@ -45,7 +47,7 @@ const ProductDetailRoute = ({
       <div className="py-32 text-center">
         <div className="inline-block w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
         <p className="mt-4 text-slate-400 tracking-widest uppercase text-[10px] font-bold">
-          Loading product...
+          {t("loadingProduct")}
         </p>
       </div>
     );
@@ -55,13 +57,13 @@ const ProductDetailRoute = ({
     return (
       <div className="py-32 text-center">
         <p className="text-slate-400 tracking-widest uppercase text-xs">
-          Product not found
+          {t("productNotFound")}
         </p>
         <button
           onClick={() => navigate("/")}
           className="mt-8 text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-900 pb-1"
         >
-          Back to Shop
+          {t("backToShop")}
         </button>
       </div>
     );
@@ -78,7 +80,9 @@ const ProductDetailRoute = ({
 
 export const ProductList = () => {
   const { t } = useTranslation();
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>(() =>
+    i18n.language === "mm" ? "mm" : "en",
+  );
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [productError, setProductError] = useState<string | null>(null);
@@ -150,6 +154,7 @@ export const ProductList = () => {
 
   useEffect(() => {
     document.documentElement.lang = lang;
+    i18n.changeLanguage(lang);
   }, [lang]);
 
   useEffect(() => {
@@ -206,7 +211,7 @@ export const ProductList = () => {
         navigate("/admin/dashboard");
       }
     } catch {
-      setLoginError("Invalid email or password");
+      setLoginError(t("invalidCredentials"));
     } finally {
       setIsLoggingIn(false);
     }
@@ -274,11 +279,11 @@ export const ProductList = () => {
             >
               {isAdminView ? (
                 <>
-                  <ShoppingBag size={14} /> Shop
+                  <ShoppingBag size={14} /> {t("shop")}
                 </>
               ) : (
                 <>
-                  <Plus size={14} /> Admin
+                  <Plus size={14} /> {t("admin")}
                 </>
               )}
             </button>
@@ -289,7 +294,7 @@ export const ProductList = () => {
               Yamin BKK
             </h1>
             <p className="text-[8px] tracking-[0.4em] uppercase text-slate-400 font-medium mt-1 whitespace-nowrap">
-              Collections
+              {t("collections")}
             </p>
           </div>
 
@@ -305,14 +310,14 @@ export const ProductList = () => {
                 onClick={handleLogout}
                 className="hidden lg:inline-flex text-[10px] uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900"
               >
-                Logout
+                {t("logout")}
               </button>
             ) : (
               <button
                 onClick={openLoginModal}
                 className="hidden lg:inline-flex text-[10px] uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900"
               >
-                Login
+                {t("login")}
               </button>
             )}
           </div>
@@ -398,7 +403,7 @@ export const ProductList = () => {
                   Yamin BKK
                 </h2>
                 <p className="text-[8px] tracking-[0.4em] uppercase text-slate-400 font-medium mt-1">
-                  Collections
+                  {t("collections")}
                 </p>
               </div>
               <button
@@ -472,7 +477,7 @@ export const ProductList = () => {
                   }}
                   className="w-full py-3 bg-slate-100 text-slate-900 rounded-full text-xs font-bold tracking-widest uppercase hover:bg-slate-200"
                 >
-                  Logout
+                  {t("logout")}
                 </button>
               ) : (
                 <button
@@ -482,7 +487,7 @@ export const ProductList = () => {
                   }}
                   className="w-full py-3 bg-slate-900 text-white rounded-full text-xs font-bold tracking-widest uppercase hover:bg-slate-800"
                 >
-                  Admin Login
+                  {t("adminLogin")}
                 </button>
               )}
             </div>
@@ -497,13 +502,12 @@ export const ProductList = () => {
               Yamin BKK
             </h4>
             <p className="text-xs text-slate-500 leading-relaxed max-w-xs">
-              Curated fashion and accessories from the heart of Bangkok. Premium
-              quality delivered to your doorstep.
+              {t("footerDescription")}
             </p>
           </div>
           <div className="space-y-6">
             <h4 className="text-xs font-bold tracking-[0.4em] uppercase">
-              Connect
+              {t("connect")}
             </h4>
             <ul className="text-xs text-slate-500 space-y-3 uppercase tracking-widest">
               <li className="hover:text-pink-600 cursor-pointer transition-colors">
@@ -517,23 +521,23 @@ export const ProductList = () => {
               </li>
             </ul>
           </div>
-          <div className="space-y-6">
+          {/* <div className="space-y-6">
             <h4 className="text-xs font-bold tracking-[0.4em] uppercase">
-              Newsletter
+              {t('newsletter')}
             </h4>
             <div className="flex border-b border-slate-300 pb-2">
               <input
                 type="email"
-                placeholder="Email address"
+                placeholder={t('emailAddress')}
                 className="bg-transparent border-none outline-none text-xs w-full"
               />
               <ChevronRight size={14} className="text-slate-400" />
             </div>
-          </div>
+          </div> */}
         </div>
         <div className="max-w-screen-2xl mx-auto mt-24 text-center">
           <p className="text-[10px] text-slate-300 tracking-[0.3em] uppercase">
-            © 2026 Yamin Bangkok Collections. All Rights Reserved.
+            {t("copyright")}
           </p>
         </div>
       </footer>
@@ -548,15 +552,15 @@ export const ProductList = () => {
               <X size={16} />
             </button>
             <p className="text-[10px] tracking-[0.4em] uppercase text-slate-400 font-bold">
-              Admin Login
+              {t("adminLogin")}
             </p>
             <h2 className="text-2xl font-light tracking-wider text-slate-900 mt-2">
-              Welcome back
+              {t("welcomeBack")}
             </h2>
             <form onSubmit={handleLoginSubmit} className="mt-6 space-y-5">
               <div>
                 <label className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                  Email
+                  {t("email")}
                 </label>
                 <input
                   type="email"
@@ -573,7 +577,7 @@ export const ProductList = () => {
               </div>
               <div>
                 <label className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                  Password
+                  {t("password")}
                 </label>
                 <input
                   type="password"
@@ -596,7 +600,7 @@ export const ProductList = () => {
                 disabled={isLoggingIn}
                 className="w-full bg-slate-900 text-white py-3 rounded-full text-xs font-bold uppercase tracking-[0.3em] hover:bg-pink-600 transition-colors"
               >
-                {isLoggingIn ? "Signing in…" : "Log In"}
+                {isLoggingIn ? t("signingIn") : t("logIn")}
               </button>
             </form>
           </div>
