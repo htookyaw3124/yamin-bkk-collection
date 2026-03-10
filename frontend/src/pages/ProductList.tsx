@@ -9,7 +9,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { ChevronRight, Menu, Plus, Search, ShoppingBag, X } from "lucide-react";
+import { Menu, Plus, Search, ShoppingBag, X } from "lucide-react";
 
 import { API_URL, TOKEN_KEY } from "../constants.ts";
 import type {
