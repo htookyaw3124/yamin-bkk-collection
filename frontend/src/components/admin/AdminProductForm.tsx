@@ -74,6 +74,7 @@ export const AdminProductForm = ({
           priceOverride: "",
           stock: "",
           options: [],
+          imageFiles: [],
         },
       ],
     }));
@@ -160,19 +161,60 @@ export const AdminProductForm = ({
     }
   };
 
+  const handleVariantImageSelect = (
+    variantId: string,
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = event.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      setFormData((current) => ({
+        ...current,
+        variants: current.variants.map((v) =>
+          v.id === variantId
+            ? { ...v, imageFiles: [...(v.imageFiles || []), ...newFiles] }
+            : v,
+        ),
+      }));
+    }
+  };
+
+  const removeVariantImage = (variantId: string, fileIndex: number) => {
+    setFormData((current) => ({
+      ...current,
+      variants: current.variants.map((v) =>
+        v.id === variantId
+          ? {
+              ...v,
+              imageFiles: (v.imageFiles || []).filter(
+                (_, index) => index !== fileIndex,
+              ),
+            }
+          : v,
+      ),
+    }));
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
 
     if (isSubmitting) return;
 
-    const files = fileInputRef.current?.files;
-    if (!files || files.length === 0) {
+    const baseFiles = fileInputRef.current?.files ? Array.from(fileInputRef.current.files) : [];
+    
+    let hasAnyImages = baseFiles.length > 0;
+    formData.variants.forEach(variant => {
+         if (variant.imageFiles && variant.imageFiles.length > 0) hasAnyImages = true;
+    });
+
+    if (!hasAnyImages) {
       alert(
         isMM
           ? "ဓာတ်ပုံတစ်ပုံအနည်းဆုံး တင်ပေးပါ"
           : "Please attach at least one product image.",
       );
+      setIsSubmitting(false);
       return;
     }
 
@@ -189,11 +231,26 @@ export const AdminProductForm = ({
       return;
     }
 
-    const variantPayload = formData.variants.length
-      ? formData.variants
-          .filter(
-            (variant) => variant.sku && variant.name_en && variant.name_mm,
-          )
+    const validVariants = formData.variants.filter(
+      (variant) => variant.sku && variant.name_en && variant.name_mm,
+    );
+    
+    const allFilesToUpload: File[] = [...baseFiles];
+    const variantImageMap: Record<string, number[]> = {};
+
+    validVariants.forEach((variant, vIndex) => {
+       if (variant.imageFiles && variant.imageFiles.length > 0) {
+           const indices: number[] = [];
+           variant.imageFiles.forEach(file => {
+               indices.push(allFilesToUpload.length);
+               allFilesToUpload.push(file);
+           });
+           variantImageMap[vIndex.toString()] = indices;
+       }
+    });
+
+    const variantPayload = validVariants.length
+      ? validVariants
           .map((variant) => ({
             sku: variant.sku,
             name_en: variant.name_en,
@@ -229,11 +286,14 @@ export const AdminProductForm = ({
       formPayload.append("audience", normalizedAudience);
       if (variantPayload) {
         formPayload.append("variants", JSON.stringify(variantPayload));
+        if (Object.keys(variantImageMap).length > 0) {
+           formPayload.append("variantImageMap", JSON.stringify(variantImageMap));
+        }
       }
       if (formData.videoUrl.trim()) {
         formPayload.append("videoUrl", formData.videoUrl.trim());
       }
-      Array.from(files).forEach((file) => formPayload.append("images", file));
+      allFilesToUpload.forEach((file) => formPayload.append("images", file));
 
       await createProduct(formPayload).unwrap();
       setFormData({
@@ -579,6 +639,43 @@ export const AdminProductForm = ({
                         )
                       }
                     />
+                  </div>
+
+                  <div className="mt-4 border border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors">
+                     <p className="text-[10px] tracking-widest uppercase font-bold text-slate-400 mb-2">
+                        {isMM ? "Variant ပုံများ" : "Variant Images"}
+                     </p>
+                     
+                     {variant.imageFiles && variant.imageFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4 justify-center">
+                           {variant.imageFiles.map((file, idx) => (
+                              <div key={idx} className="relative w-16 h-16 rounded overflow-hidden shadow-sm group border border-slate-200">
+                                 <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
+                                 <button
+                                     type="button"
+                                     className="absolute top-1 right-1 bg-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                     onClick={() => removeVariantImage(variant.id, idx)}
+                                 >
+                                     <X size={12} className="text-red-500" />
+                                 </button>
+                              </div>
+                           ))}
+                        </div>
+                     )}
+
+                     <div className="relative group cursor-pointer inline-flex flex-col items-center">
+                        <Upload size={16} className="text-slate-300 mb-1 group-hover:text-pink-500 transition-colors" />
+                        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold group-hover:text-pink-600 transition-colors">
+                           {isMM ? "ဓာတ်ပုံထည့်ရန်" : "Add Images"}
+                        </span>
+                        <input
+                           type="file"
+                           accept="image/*"
+                           multiple
+                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                           onChange={(e) => handleVariantImageSelect(variant.id, e)}
+                        />
+                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

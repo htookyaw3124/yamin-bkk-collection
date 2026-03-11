@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -25,36 +25,30 @@ export const ProductDetail = ({
   onClose,
 }: ProductDetailProps) => {
   const { t } = useTranslation();
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    product?.variants?.[0]?.id ?? null,
-  );
   const [activeImageIdx, setActiveImageIdx] = useState(0);
 
-  const selectedVariant = product?.variants?.find(
-    (variant) => variant.id === selectedVariantId,
-  );
+  const allImages = useMemo(() => {
+    const imgs = [...(product?.images || [])];
+    return imgs;
+  }, [product]);
+
   const isMM = lang === "mm";
   const name = isMM ? product?.name_mm : (product?.name_en ?? "");
   const description = isMM
     ? product?.description_mm
     : (product?.description_en ?? "");
-  const activeImage = product?.images?.[activeImageIdx]?.url ?? "";
+  const activeImage = allImages[activeImageIdx]?.url ?? "";
   const displayImage = activeImage.includes("cloudinary")
     ? activeImage.replace("/upload/", "/upload/f_auto,q_auto,w_1200/")
     : activeImage;
-  const activePrice = selectedVariant?.priceOverride ?? product?.price ?? 0;
+  const activePrice = product?.price ?? 0;
   const inStock = getProductInStock(product);
   const brandLabel = getBrandLabel(product?.brand);
 
   const getOrderMessage = () => {
     const itemName = isMM ? product.name_mm : product.name_en;
-    const variantName = selectedVariant
-      ? ` - ${isMM ? selectedVariant.name_mm : selectedVariant.name_en}`
-      : "";
     const type = inStock ? "Order" : "Pre-Order";
-    return encodeURIComponent(
-      `Hello! I would like to ${type}: ${itemName}${variantName}`,
-    );
+    return encodeURIComponent(`Hello! I would like to ${type}: ${itemName}`);
   };
 
   return (
@@ -79,7 +73,7 @@ export const ProductDetail = ({
             />
           </div>
           <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
-            {product.images.map((img, idx) => (
+            {allImages.map((img, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveImageIdx(idx)}
@@ -139,7 +133,7 @@ export const ProductDetail = ({
               </p>
             </div>
 
-            {product.variants?.length ? (
+            {/* {product.variants?.length ? (
               <div className="space-y-4 pt-8 border-t border-slate-100">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-slate-400 font-bold">
                   {t("availableVariants")}
@@ -148,7 +142,7 @@ export const ProductDetail = ({
                   {product.variants.map((variant) => (
                     <button
                       key={variant.id}
-                      onClick={() => setSelectedVariantId(variant.id)}
+                      onClick={() => handleVariantSelect(variant.id)}
                       className={`px-5 py-2.5 rounded-2xl text-[11px] font-bold tracking-[0.1em] uppercase border transition-all duration-300 ${
                         variant.id === selectedVariantId
                           ? "bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-900/20"
@@ -174,7 +168,7 @@ export const ProductDetail = ({
                   </div>
                 ) : null}
               </div>
-            ) : null}
+            ) : null} */}
 
             <div className="space-y-6 pt-12 border-t border-slate-100">
               <div className="space-y-4">

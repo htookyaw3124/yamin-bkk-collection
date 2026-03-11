@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useGetOrdersQuery, useDeleteOrderMutation, useUpdateOrderMutation } from "../../lib/api";
 import { Search, Eye, Trash2 } from "lucide-react";
-import type { Lang, Order } from "../../types";
+import type { Lang } from "../../types";
 import { AdminOrderForm } from "./AdminOrderForm";
 
 interface AdminOrdersPanelProps {

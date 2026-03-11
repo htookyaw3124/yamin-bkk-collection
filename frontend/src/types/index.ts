@@ -33,6 +33,7 @@ export type ProductVariant = {
   priceOverride?: number;
   stock: number;
   options?: VariantOption[];
+  images?: ProductImage[];
 };
 
 export type VariantOptionDraft = {
@@ -50,6 +51,7 @@ export type VariantDraft = {
   priceOverride: string;
   stock: string;
   options: VariantOptionDraft[];
+  imageFiles?: File[];
 };
 
 export type Product = {

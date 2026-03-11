@@ -29,7 +29,7 @@ export const yaminApi = createApi({
     }),
     getProduct: builder.query<Product, string>({
       query: (id) => `/products/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Product', id }],
+      providesTags: (_result, _error, id) => [{ type: 'Product', id }],
     }),
     createProduct: builder.mutation<Product, any>({
       query: (newProduct) => ({
@@ -106,7 +106,7 @@ export const yaminApi = createApi({
     }),
     getOrder: builder.query<Order, string>({
       query: (id) => `/orders/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Order', id }],
+      providesTags: (_result, _error, id) => [{ type: 'Order', id }],
     }),
     createOrder: builder.mutation<Order, any>({
       query: (newOrder) => ({
