@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import { useCreateProductMutation } from "../../lib/api";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import type {
-  Product,
   Lang,
   AdminFormState,
   Category,
@@ -12,30 +11,25 @@ import type {
 } from "../../types";
 
 interface AdminProductFormProps {
-  onSave: (product: Product) => void;
   onCancel: () => void;
   lang: Lang;
-  authToken: string;
   categories: Category[];
   categoriesLoading?: boolean;
   categoriesError?: string | null;
-  apiUrl: string;
 }
 
 export const AdminProductForm = ({
-  onSave,
   onCancel,
   lang,
-  authToken,
   categories,
   categoriesLoading = false,
   categoriesError = null,
-  apiUrl,
 }: AdminProductFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isMM = lang === "mm";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [createProduct] = useCreateProductMutation();
 
   const makeId = () =>
     `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -51,6 +45,7 @@ export const AdminProductForm = ({
     categoryId: "",
     audience: "all",
     imageUrl: "",
+    videoUrl: "",
     variants: [],
   });
 
@@ -169,14 +164,7 @@ export const AdminProductForm = ({
     event.preventDefault();
     if (isSubmitting) return;
 
-    if (!authToken) {
-      alert(
-        isMM
-          ? "Admin အကောင့်ဖြင့် ဝင်ရောက်ပါ"
-          : "Please log in as admin first.",
-      );
-      return;
-    }
+    if (isSubmitting) return;
 
     const files = fileInputRef.current?.files;
     if (!files || files.length === 0) {
@@ -242,17 +230,12 @@ export const AdminProductForm = ({
       if (variantPayload) {
         formPayload.append("variants", JSON.stringify(variantPayload));
       }
+      if (formData.videoUrl.trim()) {
+        formPayload.append("videoUrl", formData.videoUrl.trim());
+      }
       Array.from(files).forEach((file) => formPayload.append("images", file));
 
-      const response = await axios.post(`${apiUrl}/products`, formPayload, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      const savedProduct = response.data as Product;
-      onSave(savedProduct);
+      await createProduct(formPayload).unwrap();
       setFormData({
         name_en: "",
         name_mm: "",
@@ -264,6 +247,7 @@ export const AdminProductForm = ({
         categoryId: categories[0]?.id ?? "",
         audience: "all",
         imageUrl: "",
+        videoUrl: "",
         variants: [],
       });
       if (fileInputRef.current) {
@@ -486,6 +470,29 @@ export const AdminProductForm = ({
                 }
                 onClick={(event) => event.stopPropagation()}
               />
+            </div>
+            <div className="space-y-4">
+              <p className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400">
+                {isMM ? "ဗီဒီယို လင့်ခ်" : "Video Link"}
+              </p>
+              <input
+                type="url"
+                placeholder={
+                  isMM
+                    ? "YouTube သို့မဟုတ် TikTok URL"
+                    : "YouTube or TikTok URL"
+                }
+                className="w-full border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm"
+                value={formData.videoUrl}
+                onChange={(event) =>
+                  setFormData({ ...formData, videoUrl: event.target.value })
+                }
+              />
+              <p className="text-[10px] text-slate-400">
+                {isMM
+                  ? "ပစ္စည်းဗီဒီယို ပြသရန် YouTube/TikTok URL ထည့်ပါ"
+                  : "Paste a YouTube or TikTok URL to embed a product video"}
+              </p>
             </div>
           </div>
         </div>

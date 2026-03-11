@@ -11,6 +11,7 @@ import {
 import type { Product, Lang } from "../../types";
 import { getProductInStock, getBrandLabel } from "../../utils/helpers";
 import { MESSENGER_URL, TELEGRAM_URL, TIKTOK_URL } from "../../constants";
+import { VideoEmbed } from "./VideoEmbed";
 
 interface ProductDetailProps {
   product: Product;
@@ -27,6 +28,7 @@ export const ProductDetail = ({
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     product?.variants?.[0]?.id ?? null,
   );
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
 
   const selectedVariant = product?.variants?.find(
     (variant) => variant.id === selectedVariantId,
@@ -36,10 +38,10 @@ export const ProductDetail = ({
   const description = isMM
     ? product?.description_mm
     : (product?.description_en ?? "");
-  const imageUrl = product?.images?.[0]?.url ?? "";
-  const displayImage = imageUrl.includes("cloudinary")
-    ? imageUrl.replace("/upload/", "/upload/f_auto,q_auto,w_1200/")
-    : imageUrl;
+  const activeImage = product?.images?.[activeImageIdx]?.url ?? "";
+  const displayImage = activeImage.includes("cloudinary")
+    ? activeImage.replace("/upload/", "/upload/f_auto,q_auto,w_1200/")
+    : activeImage;
   const activePrice = selectedVariant?.priceOverride ?? product?.price ?? 0;
   const inStock = getProductInStock(product);
   const brandLabel = getBrandLabel(product?.brand);
@@ -62,35 +64,47 @@ export const ProductDetail = ({
           onClick={onClose}
           className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors text-[10px] uppercase tracking-[0.2em] font-bold"
         >
-          <ArrowLeft size={14} />{" "}
-          {t("backToShop")}
+          <ArrowLeft size={14} /> {t("backToShop")}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-16 lg:gap-24 relative">
         {/* Gallery */}
-        <div className="space-y-6">
-          <div className="aspect-[3/4] overflow-hidden bg-slate-50">
+        <div className="lg:col-span-7 flex flex-col gap-6 lg:sticky lg:top-32 h-max">
+          <div className="aspect-[4/5] w-full overflow-hidden bg-slate-50 rounded-3xl shadow-sm relative group">
             <img
               src={displayImage}
               alt={name}
-              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
             {product.images.map((img, idx) => (
-              <div
+              <button
                 key={idx}
-                className="aspect-square bg-slate-100 overflow-hidden cursor-pointer opacity-60 hover:opacity-150 transition-opacity"
+                onClick={() => setActiveImageIdx(idx)}
+                className={`flex-none w-24 aspect-[4/5] rounded-xl overflow-hidden cursor-pointer transition-all snap-start ${
+                  idx === activeImageIdx
+                    ? "ring-2 ring-slate-900 opacity-100"
+                    : "opacity-60 hover:opacity-100 hover:ring-2 hover:ring-slate-200"
+                }`}
               >
-                <img src={img.url} className="w-full h-full object-cover" />
-              </div>
+                <img
+                  src={img.url}
+                  className="w-full h-full object-cover grayscale-0"
+                />
+              </button>
             ))}
           </div>
+          {product.videoUrl && (
+            <div className="mt-4">
+              <VideoEmbed url={product.videoUrl} />
+            </div>
+          )}
         </div>
 
         {/* Content */}
-        <div className="flex flex-col justify-center max-w-lg">
+        <div className="lg:col-span-5 flex flex-col justify-start">
           <div className="space-y-8">
             <header className="space-y-4">
               {brandLabel && (
@@ -135,10 +149,10 @@ export const ProductDetail = ({
                     <button
                       key={variant.id}
                       onClick={() => setSelectedVariantId(variant.id)}
-                      className={`px-4 py-2 rounded-full text-[11px] tracking-[0.1em] uppercase border transition-all ${
+                      className={`px-5 py-2.5 rounded-2xl text-[11px] font-bold tracking-[0.1em] uppercase border transition-all duration-300 ${
                         variant.id === selectedVariantId
-                          ? "bg-slate-900 text-white border-slate-900"
-                          : "border-slate-200 text-slate-500 hover:border-slate-400"
+                          ? "bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-900/20"
+                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-400 hover:shadow-sm hover:-translate-y-0.5"
                       }`}
                     >
                       {isMM ? variant.name_mm : variant.name_en}
@@ -172,7 +186,7 @@ export const ProductDetail = ({
                     href={`${MESSENGER_URL}?text=${getOrderMessage()}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 bg-blue-600 text-white py-4 rounded-full flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-lg text-[10px] font-bold uppercase tracking-widest"
+                    className="flex-1 bg-blue-600 text-white py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-600/30 hover:-translate-y-1 text-[10px] font-bold uppercase tracking-widest"
                   >
                     <MessageCircle size={18} /> Messenger
                   </a>
@@ -180,7 +194,7 @@ export const ProductDetail = ({
                     href={`${TELEGRAM_URL}?text=${getOrderMessage()}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 bg-sky-500 text-white py-4 rounded-full flex items-center justify-center gap-3 hover:bg-sky-600 transition-all shadow-lg text-[10px] font-bold uppercase tracking-widest"
+                    className="flex-1 bg-sky-500 text-white py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-sky-600 transition-all shadow-lg hover:shadow-sky-500/30 hover:-translate-y-1 text-[10px] font-bold uppercase tracking-widest"
                   >
                     <Send size={18} /> Telegram
                   </a>
@@ -190,7 +204,7 @@ export const ProductDetail = ({
                     href={`viber://forward?text=${getOrderMessage()}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 bg-purple-600 text-white py-4 rounded-full flex items-center justify-center gap-3 hover:bg-purple-700 transition-all shadow-lg text-[10px] font-bold uppercase tracking-widest"
+                    className="flex-1 bg-purple-600 text-white py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-purple-700 transition-all shadow-lg hover:shadow-purple-600/30 hover:-translate-y-1 text-[10px] font-bold uppercase tracking-widest"
                   >
                     <Phone size={18} /> Viber
                   </a>
@@ -198,7 +212,7 @@ export const ProductDetail = ({
                     href={TIKTOK_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 bg-black text-white py-4 rounded-full flex items-center justify-center gap-3 hover:bg-zinc-800 transition-all shadow-lg text-[10px] font-bold uppercase tracking-widest"
+                    className="flex-1 bg-black text-white py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-zinc-800 transition-all shadow-lg hover:shadow-black/30 hover:-translate-y-1 text-[10px] font-bold uppercase tracking-widest"
                   >
                     <Music2 size={18} /> TikTok
                   </a>

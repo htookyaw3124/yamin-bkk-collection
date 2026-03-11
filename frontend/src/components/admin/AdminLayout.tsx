@@ -1,39 +1,31 @@
 import { NavLink, Routes, Route, Navigate } from "react-router-dom";
-import { LayoutDashboard, Package, Tag } from "lucide-react";
+import { LayoutDashboard, Package, Tag, ClipboardList } from "lucide-react";
 import type { Product, Lang, Category } from "../../types";
 import { AdminDashboard } from "./AdminDashboard";
 import { AdminProductsPanel } from "./AdminProductsPanel";
 import { AdminCategoriesPanel } from "./AdminCategoriesPanel";
+import { AdminOrdersPanel } from "./AdminOrdersPanel";
 
 interface AdminLayoutProps {
   lang: Lang;
   products: Product[];
   categories: Category[];
-  authToken: string | null;
-  onSaveProduct: (product: Product) => void;
-  onRefreshProducts: () => void;
-  onRefreshCategories: () => void;
   categoriesLoading: boolean;
   categoriesError: string | null;
-  apiUrl: string;
 }
 
 export const AdminLayout = ({
   lang,
   products,
   categories,
-  authToken,
-  onSaveProduct,
-  onRefreshProducts,
-  onRefreshCategories,
   categoriesLoading,
   categoriesError,
-  apiUrl,
 }: AdminLayoutProps) => {
   const navItems = [
     { path: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/admin/products", label: "Products", icon: Package },
     { path: "/admin/categories", label: "Categories", icon: Tag },
+    { path: "/admin/orders", label: "Orders", icon: ClipboardList },
   ];
 
   return (
@@ -75,12 +67,8 @@ export const AdminLayout = ({
               products={products}
               categories={categories}
               lang={lang}
-              authToken={authToken}
-              onSaveProduct={onSaveProduct}
-              onRefresh={onRefreshProducts}
               categoriesLoading={categoriesLoading}
               categoriesError={categoriesError}
-              apiUrl={apiUrl}
             />
           }
         />
@@ -89,11 +77,12 @@ export const AdminLayout = ({
           element={
             <AdminCategoriesPanel
               categories={categories}
-              authToken={authToken}
-              onRefresh={onRefreshCategories}
-              apiUrl={apiUrl}
             />
           }
+        />
+        <Route
+          path="orders"
+          element={<AdminOrdersPanel lang={lang} />}
         />
       </Routes>
     </div>

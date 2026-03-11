@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { useUpdateProductMutation, useDeleteProductMutation } from "../../lib/api";
 import { Search, CheckCircle, Globe, Pencil, Trash2 } from "lucide-react";
 import type { Product, Lang, Category, Audience } from "../../types";
 import {
@@ -15,24 +15,16 @@ interface AdminProductsPanelProps {
   products: Product[];
   categories: Category[];
   lang: Lang;
-  authToken: string | null;
-  onSaveProduct: (product: Product) => void;
-  onRefresh: () => void;
   categoriesLoading: boolean;
   categoriesError: string | null;
-  apiUrl: string;
 }
 
 export const AdminProductsPanel = ({
   products,
   categories,
   lang,
-  authToken,
-  onSaveProduct,
-  onRefresh,
   categoriesLoading,
   categoriesError,
-  apiUrl,
 }: AdminProductsPanelProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
@@ -48,9 +40,12 @@ export const AdminProductsPanel = ({
     stock: "",
     categoryId: "",
     audience: "all" as Audience,
+    videoUrl: "",
   });
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [updateProduct] = useUpdateProductMutation();
+  const [deleteProduct] = useDeleteProductMutation();
 
   useEffect(() => {
     if (!editingProduct) return;
@@ -67,6 +62,7 @@ export const AdminProductsPanel = ({
       stock: editingProduct.stock?.toString() ?? "0",
       categoryId,
       audience: editingProduct.audience ?? "all",
+      videoUrl: editingProduct.videoUrl ?? "",
     });
   }, [editingProduct]);
 
@@ -90,7 +86,7 @@ export const AdminProductsPanel = ({
   });
 
   const handleUpdate = async () => {
-    if (!editingProduct || !authToken) return;
+    if (!editingProduct) return;
     setIsSaving(true);
     setActionError(null);
     try {
@@ -103,16 +99,15 @@ export const AdminProductsPanel = ({
         stock: editForm.stock,
         categoryId: editForm.categoryId,
         audience: editForm.audience,
+        videoUrl: editForm.videoUrl,
       };
       if (editForm.price === "") delete payload.price;
       if (editForm.stock === "") delete payload.stock;
       if (!editForm.categoryId) delete payload.categoryId;
+      if (!editForm.videoUrl?.trim()) delete payload.videoUrl;
 
-      await axios.patch(`${apiUrl}/products/${editingProduct.id}`, payload, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
+      await updateProduct({ id: editingProduct.id, payload }).unwrap();
       setEditingProduct(null);
-      onRefresh();
     } catch (error) {
       setActionError(getApiErrorMessage(error, "Failed to update product."));
     } finally {
@@ -121,14 +116,10 @@ export const AdminProductsPanel = ({
   };
 
   const handleDelete = async (productId: string) => {
-    if (!authToken) return;
     if (!window.confirm("Delete this product?")) return;
     setActionError(null);
     try {
-      await axios.delete(`${apiUrl}/products/${productId}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      onRefresh();
+      await deleteProduct(productId).unwrap();
     } catch (error) {
       setActionError(getApiErrorMessage(error, "Failed to delete product."));
     }
@@ -256,13 +247,10 @@ export const AdminProductsPanel = ({
         <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6">
           <AdminProductForm
             lang={lang}
-            onSave={onSaveProduct}
             onCancel={() => setShowCreateForm(false)}
-            authToken={authToken ?? ""}
             categories={categories}
             categoriesLoading={categoriesLoading}
             categoriesError={categoriesError}
-            apiUrl={apiUrl}
           />
         </div>
       )}
@@ -367,6 +355,15 @@ export const AdminProductsPanel = ({
               <option value="woman">Woman</option>
               <option value="child">Child</option>
             </select>
+            <input
+              type="url"
+              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900 md:col-span-2"
+              placeholder="YouTube or TikTok Video URL"
+              value={editForm.videoUrl}
+              onChange={(event) =>
+                setEditForm({ ...editForm, videoUrl: event.target.value })
+              }
+            />
           </div>
           <div className="mt-8 flex justify-end gap-3">
             <button

@@ -26,6 +26,7 @@ const resources = {
       orderNowViaSocial: 'Order Now via Social',
       shippingFromBKK: 'Shipping from BKK',
       orderMessage: 'Hello! I would like to {{type}}: {{item}}',
+      productVideo: 'Product Video',
 
       // Category Filters
       categories: 'Categories',
@@ -99,6 +100,7 @@ const resources = {
       orderNowViaSocial: 'ယခုပင်မှာယူလိုက်ပါ',
       shippingFromBKK: 'ဘန်ကောက်မှ ပို့ဆောင်ပေးပါသည်',
       orderMessage: 'မင်္ဂလာပါ! {{type}} လိုပါတယ်: {{item}}',
+      productVideo: 'ပစ္စည်းဗီဒီယို',
 
       // Category Filters
       categories: 'အမျိုးအစားများ',

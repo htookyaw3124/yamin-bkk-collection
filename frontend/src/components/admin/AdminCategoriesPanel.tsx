@@ -1,21 +1,15 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { useCreateCategoryMutation, useUpdateCategoryMutation, useDeleteCategoryMutation } from "../../lib/api";
 import { Pencil, Trash2 } from "lucide-react";
 import type { Category } from "../../types";
 import { getApiErrorMessage, toSlug } from "../../utils/helpers";
 
 interface AdminCategoriesPanelProps {
   categories: Category[];
-  authToken: string | null;
-  onRefresh: () => void;
-  apiUrl: string;
 }
 
 export const AdminCategoriesPanel = ({
   categories,
-  authToken,
-  onRefresh,
-  apiUrl,
 }: AdminCategoriesPanelProps) => {
   const [newCategory, setNewCategory] = useState({
     name_en: "",
@@ -31,6 +25,9 @@ export const AdminCategoriesPanel = ({
   });
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [createCategory] = useCreateCategoryMutation();
+  const [updateCategory] = useUpdateCategoryMutation();
+  const [deleteCategory] = useDeleteCategoryMutation();
 
   useEffect(() => {
     if (!editingCategory) return;
@@ -42,16 +39,12 @@ export const AdminCategoriesPanel = ({
   }, [editingCategory]);
 
   const handleCreate = async () => {
-    if (!authToken) return;
     setIsSaving(true);
     setActionError(null);
     try {
-      await axios.post(`${apiUrl}/categories`, newCategory, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
+      await createCategory(newCategory).unwrap();
       setNewCategory({ name_en: "", name_mm: "", slug: "" });
       setSlugTouched(false);
-      onRefresh();
     } catch (error) {
       setActionError(getApiErrorMessage(error, "Failed to create category."));
     } finally {
@@ -60,19 +53,12 @@ export const AdminCategoriesPanel = ({
   };
 
   const handleUpdate = async () => {
-    if (!authToken || !editingCategory) return;
+    if (!editingCategory) return;
     setIsSaving(true);
     setActionError(null);
     try {
-      await axios.patch(
-        `${apiUrl}/categories/${editingCategory.id}`,
-        editForm,
-        {
-          headers: { Authorization: `Bearer ${authToken}` },
-        },
-      );
+      await updateCategory({ id: editingCategory.id, payload: editForm }).unwrap();
       setEditingCategory(null);
-      onRefresh();
     } catch (error) {
       setActionError(getApiErrorMessage(error, "Failed to update category."));
     } finally {
@@ -81,14 +67,10 @@ export const AdminCategoriesPanel = ({
   };
 
   const handleDelete = async (categoryId: string) => {
-    if (!authToken) return;
     if (!window.confirm("Delete this category?")) return;
     setActionError(null);
     try {
-      await axios.delete(`${apiUrl}/categories/${categoryId}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      onRefresh();
+      await deleteCategory(categoryId).unwrap();
     } catch (error) {
       setActionError(getApiErrorMessage(error, "Failed to delete category."));
     }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import axios from "axios";
+import { useGetProductsQuery, useGetCategoriesQuery, useLoginMutation } from "../lib/api";
 import { useTranslation } from "react-i18next";
 import i18n from "../lib/i18n";
 import {
@@ -11,11 +11,10 @@ import {
 } from "react-router-dom";
 import { Menu, Plus, Search, ShoppingBag, X } from "lucide-react";
 
-import { API_URL, TOKEN_KEY } from "../constants.ts";
+import { TOKEN_KEY } from "../constants.ts";
 import type {
   Lang,
   Product,
-  Category,
   CategoryFilter,
   ForFilter,
 } from "../types";
@@ -83,9 +82,20 @@ export const ProductList = () => {
   const [lang, setLang] = useState<Lang>(() =>
     i18n.language === "mm" ? "mm" : "en",
   );
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
-  const [productError, setProductError] = useState<string | null>(null);
+  const {
+    data: products = [],
+    isLoading: isLoadingProducts,
+    error: productErrorData
+  } = useGetProductsQuery();
+  const productError = productErrorData ? "Unable to load products." : null;
+
+  const {
+    data: categoryOptions = [],
+    isLoading: isFetchingCategories,
+    error: categoryFetchErrorData
+  } = useGetCategoriesQuery();
+  const categoryFetchError = categoryFetchErrorData ? "Unable to load categories" : null;
+
   const [category, setCategory] = useState<CategoryFilter>("All");
   const [forFilter, setForFilter] = useState<ForFilter>("All");
   const [scrolled, setScrolled] = useState(false);
@@ -94,11 +104,7 @@ export const ProductList = () => {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [categoryOptions, setCategoryOptions] = useState<Category[]>([]);
-  const [isFetchingCategories, setIsFetchingCategories] = useState(true);
-  const [categoryFetchError, setCategoryFetchError] = useState<string | null>(
-    null,
-  );
+  const [login] = useLoginMutation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -163,39 +169,7 @@ export const ProductList = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const fetchCategories = useCallback(async () => {
-    setIsFetchingCategories(true);
-    try {
-      const { data } = await axios.get<Category[]>(`${API_URL}/categories`);
-      setCategoryOptions(data);
-      setCategoryFetchError(null);
-    } catch (error) {
-      console.error("Failed to load categories", error);
-      setCategoryFetchError("Unable to load categories");
-    } finally {
-      setIsFetchingCategories(false);
-    }
-  }, []);
-
-  const fetchProducts = useCallback(async () => {
-    setIsLoadingProducts(true);
-    try {
-      const { data } = await axios.get<Product[]>(`${API_URL}/products`);
-      setProducts(data);
-      setProductError(null);
-    } catch (error) {
-      console.error("Failed to load products", error);
-      setProductError("Unable to load products.");
-      setProducts([]);
-    } finally {
-      setIsLoadingProducts(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchCategories();
-    fetchProducts();
-  }, [fetchCategories, fetchProducts]);
+  // Removed old manual fetching functions
 
   const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -203,7 +177,7 @@ export const ProductList = () => {
     setIsLoggingIn(true);
     setLoginError(null);
     try {
-      const { data } = await axios.post(`${API_URL}/auth/login`, loginForm);
+      const data = await login(loginForm).unwrap();
       persistToken(data.accessToken, data.expiresIn ?? 1800);
       setLoginForm({ email: "", password: "" });
       closeLoginModal();
@@ -241,12 +215,7 @@ export const ProductList = () => {
     });
   }, [category, forFilter, products]);
 
-  const handleAddProduct = (newProduct: Product) => {
-    setProducts((current) => [newProduct, ...current]);
-    if (!isAdminView) {
-      navigate("/");
-    }
-  };
+
 
   const handleViewDetails = (productId: string) => {
     navigate(`/product/${productId}`);
@@ -351,13 +320,8 @@ export const ProductList = () => {
                 lang={lang}
                 products={products}
                 categories={categoryOptions}
-                authToken={authToken}
-                onSaveProduct={handleAddProduct}
-                onRefreshProducts={fetchProducts}
-                onRefreshCategories={fetchCategories}
                 categoriesLoading={isFetchingCategories}
                 categoriesError={categoryFetchError}
-                apiUrl={API_URL}
               />
             </AdminGate>
           }

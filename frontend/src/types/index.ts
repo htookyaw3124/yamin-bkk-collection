@@ -65,6 +65,7 @@ export type Product = {
   audience: Audience;
   images: ProductImage[];
   variants?: ProductVariant[];
+  videoUrl?: string;
 };
 
 export type CategoryFilter =
@@ -95,7 +96,47 @@ export type AdminFormState = {
   categoryId: string;
   audience: Audience;
   imageUrl: string;
+  videoUrl: string;
   variants: VariantDraft[];
+};
+
+export type PaymentStatus = "PENDING" | "HALF_PAID" | "FULL_PAID" | "REFUNDED";
+export type OrderStatus = "PRE_ORDER" | "PROCESSING" | "DELIVERING" | "COMPLETED" | "CANCELLED";
+export type ItemStatus = "PENDING" | "BOUGHT" | "NOT_AVAILABLE";
+
+export type Customer = {
+  id: string;
+  name: string;
+  phone: string;
+  address?: string;
+  createdAt?: string;
+};
+
+export type OrderItem = {
+  id: string;
+  orderId: string;
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  unitPrice: string | number;
+  subtotal: string | number;
+  itemStatus: ItemStatus;
+  refundedAmount: string | number;
+  product?: Product;
+  variant?: ProductVariant;
+};
+
+export type Order = {
+  id: string;
+  customerId: string;
+  deliveryAddress?: string;
+  totalAmount: string | number;
+  paidAmount: string | number;
+  paymentStatus: PaymentStatus;
+  orderStatus: OrderStatus;
+  createdAt?: string;
+  customer?: Customer;
+  items?: OrderItem[];
 };
 // --- Constants (Centralized) ---
 
