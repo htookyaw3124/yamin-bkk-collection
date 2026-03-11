@@ -1,30 +1,49 @@
-import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+  IsUUID,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
 import { Audience } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 
 export class VariantOptionDto {
-  @IsString() @IsNotEmpty()
+  @IsString()
+  @IsNotEmpty()
   type: string;
 
-  @IsString() @IsNotEmpty()
+  @IsString()
+  @IsNotEmpty()
   value_en: string;
 
-  @IsString() @IsNotEmpty()
+  @IsString()
+  @IsNotEmpty()
   value_mm: string;
 }
 
 export class CreateVariantDto {
-  @IsString() @IsNotEmpty()
+  @IsString()
+  @IsNotEmpty()
   sku: string;
 
-  @IsString() @IsNotEmpty()
+  @IsString()
+  @IsNotEmpty()
   name_en: string;
 
-  @IsString() @IsNotEmpty()
+  @IsString()
+  @IsNotEmpty()
   name_mm: string;
 
   @IsOptional()
-  @Transform(({ value }) => (value === undefined || value === '' ? undefined : parseFloat(value)))
+  @Transform(({ value }) =>
+    value === undefined || value === '' ? undefined : parseFloat(value),
+  )
   @IsNumber({}, { message: 'priceOverride must be a number' })
   priceOverride?: number;
 
@@ -40,16 +59,20 @@ export class CreateVariantDto {
 }
 
 export class CreateProductDto {
-  @IsString() @IsNotEmpty()
+  @IsString()
+  @IsNotEmpty()
   name_en: string;
 
-  @IsString() @IsNotEmpty()
+  @IsString()
+  @IsNotEmpty()
   name_mm: string;
 
-  @IsString() @IsOptional()
+  @IsString()
+  @IsOptional()
   description_en?: string;
 
-  @IsString() @IsOptional()
+  @IsString()
+  @IsOptional()
   description_mm?: string;
 
   @Transform(({ value }) => parseFloat(value))
@@ -60,15 +83,25 @@ export class CreateProductDto {
   @IsNumber()
   stock: number;
 
-  @IsString() @IsNotEmpty()
+  @IsString()
+  @IsNotEmpty()
   categoryId: string;
 
   @IsEnum(Audience)
   @IsOptional()
   audience?: Audience;
 
-  @IsUUID() @IsOptional()
+  @IsUUID()
+  @IsOptional()
   brandId?: string;
+
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @ValidateIf(
+    (_obj, value) => value !== undefined && value !== null && value !== '',
+  )
+  @IsUrl()
+  @IsOptional()
+  videoUrl?: string;
 
   @IsArray()
   @ValidateNested({ each: true })

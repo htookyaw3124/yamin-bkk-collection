@@ -41,6 +41,7 @@ model Product {
   price          Decimal        @db.Decimal(10, 2)
   stock          Int            @default(0)
   audience       Audience       @default(all)
+  videoUrl       String?
   
   category       Category       @relation(fields: [categoryId], references: [id])
   categoryId     String
@@ -50,6 +51,7 @@ model Product {
   
   images         ProductImage[]
   variants       ProductVariant[]
+  orderItems     OrderItem[] // Added for OrderItem relation
   
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -66,6 +68,7 @@ model ProductVariant {
   productId      String
   options        VariantOption[]
   images         ProductImage[]
+  orderItems     OrderItem[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 }
@@ -89,4 +92,64 @@ model ProductImage {
   productId  String
   variant    ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
   variantId  String?
+}
+
+enum PaymentStatus {
+  PENDING
+  HALF_PAID
+  FULL_PAID
+  REFUNDED
+}
+
+enum OrderStatus {
+  PRE_ORDER
+  PROCESSING
+  DELIVERING
+  COMPLETED
+  CANCELLED
+}
+
+enum ItemStatus {
+  PENDING
+  BOUGHT
+  NOT_AVAILABLE
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  address   String?  @db.Text
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id              String        @id @default(uuid())
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  customerId      String
+  deliveryAddress String?       @db.Text
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  paidAmount      Decimal       @default(0) @db.Decimal(10, 2)
+  paymentStatus   PaymentStatus @default(PENDING)
+  orderStatus     OrderStatus   @default(PRE_ORDER)
+  items           OrderItem[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model OrderItem {
+  id             String          @id @default(uuid())
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId        String
+  product        Product         @relation(fields: [productId], references: [id])
+  productId      String
+  variant        ProductVariant? @relation(fields: [variantId], references: [id])
+  variantId      String?
+  quantity       Int
+  unitPrice      Decimal         @db.Decimal(10, 2)
+  subtotal       Decimal         @db.Decimal(10, 2)
+  itemStatus     ItemStatus      @default(PENDING)
+  refundedAmount Decimal         @default(0) @db.Decimal(10, 2)
 }

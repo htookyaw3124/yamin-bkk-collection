@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { v2 as cloudinary, UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+import {
+  v2 as cloudinary,
+  UploadApiResponse,
+  UploadApiErrorResponse,
+} from 'cloudinary';
 import toStream = require('buffer-to-stream');
 
 @Injectable()
@@ -12,7 +16,8 @@ export class CloudinaryService {
         { folder: 'yamin-bkk-products' },
         (error, result) => {
           if (error) return reject(error);
-          if (!result) return reject(new Error('Cloudinary upload returned no result'));
+          if (!result)
+            return reject(new Error('Cloudinary upload returned no result'));
           resolve(result);
         },
       );

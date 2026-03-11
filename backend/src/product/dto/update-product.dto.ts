@@ -1,6 +1,14 @@
 import { Audience } from '@prisma/client';
 import { Transform } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+  ValidateIf,
+} from 'class-validator';
 
 export class UpdateProductDto {
   @IsString()
@@ -42,4 +50,12 @@ export class UpdateProductDto {
   @IsEnum(Audience)
   @IsOptional()
   audience?: Audience;
+
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @ValidateIf(
+    (_obj, value) => value !== undefined && value !== null && value !== '',
+  )
+  @IsUrl()
+  @IsOptional()
+  videoUrl?: string;
 }

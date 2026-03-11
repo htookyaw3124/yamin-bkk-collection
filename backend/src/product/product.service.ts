@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -11,7 +15,10 @@ export class ProductService {
     private cloudinary: CloudinaryService,
   ) {}
 
-  async create(createProductDto: CreateProductDto, files: Express.Multer.File[] = []) {
+  async create(
+    createProductDto: CreateProductDto,
+    files: Express.Multer.File[] = [],
+  ) {
     const { variants = [], ...productPayload } = createProductDto;
 
     const category = await this.prisma.category.findFirst({
@@ -28,7 +35,9 @@ export class ProductService {
     }
 
     const uploadResults = files?.length
-      ? await Promise.all(files.map(file => this.cloudinary.uploadImage(file)))
+      ? await Promise.all(
+          files.map((file) => this.cloudinary.uploadImage(file)),
+        )
       : [];
 
     const productImages = uploadResults.map((result: any, index) => ({
@@ -51,7 +60,7 @@ export class ProductService {
         images: productImages.length ? { create: productImages } : undefined,
         variants: variants.length
           ? {
-              create: variants.map(variant => ({
+              create: variants.map((variant) => ({
                 sku: variant.sku,
                 name_en: variant.name_en,
                 name_mm: variant.name_mm,
@@ -59,7 +68,7 @@ export class ProductService {
                 stock: Number(variant.stock ?? 0),
                 options: variant.options?.length
                   ? {
-                      create: variant.options.map(option => ({
+                      create: variant.options.map((option) => ({
                         type: option.type,
                         value_en: option.value_en,
                         value_mm: option.value_mm,

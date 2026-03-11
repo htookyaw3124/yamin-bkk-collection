@@ -12,8 +12,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {
-    this.adminEmail = this.configService.get<string>('ADMIN_EMAIL', 'admin@yaminbkk.com');
-    this.adminPassword = this.configService.get<string>('ADMIN_PASSWORD', 'changeme');
+    this.adminEmail = this.configService.get<string>(
+      'ADMIN_EMAIL',
+      'admin@yaminbkk.com',
+    );
+    this.adminPassword = this.configService.get<string>(
+      'ADMIN_PASSWORD',
+      'changeme',
+    );
   }
 
   async validateAdmin(email: string, password: string) {
