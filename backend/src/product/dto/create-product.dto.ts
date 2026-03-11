@@ -119,4 +119,8 @@ export class CreateProductDto {
   })
   @IsOptional()
   variants?: CreateVariantDto[];
+
+  @IsString()
+  @IsOptional()
+  variantImageMap?: string;
 }

@@ -35,10 +35,23 @@ export class ProductController {
     return this.productService.findAll();
   }
 
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.productService.findOne(id);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productService.update(id, updateProductDto);
+  @UseInterceptors(FilesInterceptor('images', 5))
+  update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @UploadedFiles() files: Express.Multer.File[] = [],
+  ) {
+    console.log('Controller Update ID:', id);
+    console.log('Controller Update DTO:', updateProductDto);
+    console.log('Controller Update Files Count:', files?.length);
+    return this.productService.update(id, updateProductDto, files);
   }
 
   @Delete(':id')

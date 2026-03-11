@@ -56,6 +56,14 @@ export class UpdateProductDto {
     (_obj, value) => value !== undefined && value !== null && value !== '',
   )
   @IsUrl()
+  @IsString()
   @IsOptional()
   videoUrl?: string;
+
+  @IsOptional()
+  variants?: any;
+
+  @IsString()
+  @IsOptional()
+  variantImageMap?: string;
 }
