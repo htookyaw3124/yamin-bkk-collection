@@ -1,13 +1,22 @@
 import { useState, useEffect } from "react";
 import { useUpdateProductMutation, useDeleteProductMutation } from "../../lib/api";
 import { Search, CheckCircle, Globe, Pencil, Trash2, X, Upload } from "lucide-react";
-import type { Product, Lang, Category, Audience, VariantDraft, VariantOptionDraft } from "../../types";
+import type {
+  Product,
+  Lang,
+  Category,
+  Audience,
+  VariantDraft,
+  VariantOptionDraft,
+  VariantGroup,
+} from "../../types";
 import {
   getProductInStock,
   getCategoryLabel,
   getApiErrorMessage,
 } from "../../utils/helpers";
 import { AdminProductForm } from "./AdminProductForm";
+import { VariantBuilder } from "./VariantBuilder";
 
 type StockFilter = "All" | "In Stock" | "Pre-Order";
 
@@ -42,6 +51,7 @@ export const AdminProductsPanel = ({
     audience: "all" as Audience,
     videoUrl: "",
     variants: [] as VariantDraft[],
+    variantGroups: [] as VariantGroup[],
   });
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -81,6 +91,9 @@ export const AdminProductsPanel = ({
             })) ?? [],
           imageFiles: [],
         })) ?? [],
+      variantGroups: Array.isArray(editingProduct.variantGroups)
+        ? (editingProduct.variantGroups as VariantGroup[])
+        : [],
     });
   }, [editingProduct]);
 
@@ -256,6 +269,10 @@ export const AdminProductsPanel = ({
           formPayload.append(key, value);
         }
       });
+      formPayload.append(
+        "variantGroups",
+        JSON.stringify(editForm.variantGroups ?? []),
+      );
 
       if (editForm.variants.length > 0) {
         const variantPayload = editForm.variants.map((v) => ({
@@ -553,6 +570,20 @@ export const AdminProductsPanel = ({
               onChange={(event) =>
                 setEditForm({ ...editForm, videoUrl: event.target.value })
               }
+            />
+          </div>
+
+          <div className="mt-8">
+            <VariantBuilder
+              variantGroups={editForm.variantGroups}
+              onChangeGroups={(groups) =>
+                setEditForm({ ...editForm, variantGroups: groups })
+              }
+              onGenerate={(variants) =>
+                setEditForm({ ...editForm, variants })
+              }
+              makeId={makeId}
+              isMM={isMM}
             />
           </div>
 

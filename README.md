@@ -18,3 +18,13 @@ docker compose up -d --build
 # 4. Reload nginx
 
 sudo nginx -t && sudo systemctl reload nginx
+
+
+# 1. Create the database
+sudo -u postgres psql -c "CREATE DATABASE yamin_bkk_collection;"
+
+# 2. Run Prisma migrations inside the API container
+docker compose exec api npx prisma migrate deploy
+
+# 3. Seed the database (categories, etc.)
+docker compose exec api npx prisma db seed

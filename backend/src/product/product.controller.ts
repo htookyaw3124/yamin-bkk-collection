@@ -9,6 +9,7 @@ import {
   UploadedFiles,
   UseGuards,
   UseInterceptors,
+  ValidationPipe,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProductService } from './product.service';
@@ -21,12 +22,14 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @UseInterceptors(FilesInterceptor('images', 5))
   create(
-    @Body() createProductDto: CreateProductDto,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    createProductDto: CreateProductDto,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
+    console.log('Controller Create DTO:', createProductDto.variants);
     return this.productService.create(createProductDto, files);
   }
 
@@ -42,7 +45,7 @@ export class ProductController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FilesInterceptor('images', 5))
+  @UseInterceptors(FilesInterceptor('images', 50))
   update(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,

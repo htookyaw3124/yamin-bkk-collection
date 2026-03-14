@@ -103,24 +103,34 @@ export class CreateProductDto {
   @IsOptional()
   videoUrl?: string;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateVariantDto)
   @Transform(({ value }) => {
-    if (typeof value === 'string' && value.trim().length) {
+    if (typeof value === 'string') {
       try {
-        const parsed = JSON.parse(value);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (error) {
+        return JSON.parse(value);
+      } catch {
         return [];
       }
     }
-    return value;
+    return value || [];
   })
+  @IsArray()
   @IsOptional()
   variants?: CreateVariantDto[];
 
   @IsString()
   @IsOptional()
   variantImageMap?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string' && value.trim().length) {
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        return [];
+      }
+    }
+    return value;
+  })
+  variantGroups?: any;
 }

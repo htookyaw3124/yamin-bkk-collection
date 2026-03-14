@@ -66,4 +66,17 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   variantImageMap?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string' && value.trim().length) {
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        return [];
+      }
+    }
+    return value;
+  })
+  variantGroups?: any;
 }

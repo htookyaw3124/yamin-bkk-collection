@@ -42,6 +42,7 @@ model Product {
   stock          Int            @default(0)
   audience       Audience       @default(all)
   videoUrl       String?
+  variantGroups  Json?
   
   category       Category       @relation(fields: [categoryId], references: [id])
   categoryId     String

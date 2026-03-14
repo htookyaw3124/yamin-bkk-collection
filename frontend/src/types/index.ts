@@ -43,6 +43,19 @@ export type VariantOptionDraft = {
   value_mm: string;
 };
 
+export type VariantGroupValue = {
+  id: string;
+  value_en: string;
+  value_mm: string;
+};
+
+export type VariantGroup = {
+  id: string;
+  name_en: string;
+  name_mm: string;
+  values: VariantGroupValue[];
+};
+
 export type VariantDraft = {
   id: string;
   sku: string;
@@ -68,6 +81,7 @@ export type Product = {
   images: ProductImage[];
   variants?: ProductVariant[];
   videoUrl?: string;
+  variantGroups?: VariantGroup[];
 };
 
 export type CategoryFilter =
@@ -100,6 +114,7 @@ export type AdminFormState = {
   imageUrl: string;
   videoUrl: string;
   variants: VariantDraft[];
+  variantGroups: VariantGroup[];
 };
 
 export type PaymentStatus = "PENDING" | "HALF_PAID" | "FULL_PAID" | "REFUNDED";

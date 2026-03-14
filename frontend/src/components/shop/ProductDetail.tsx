@@ -12,6 +12,7 @@ import type { Product, Lang } from "../../types";
 import { getProductInStock, getBrandLabel } from "../../utils/helpers";
 import { MESSENGER_URL, TELEGRAM_URL, TIKTOK_URL } from "../../constants";
 import { VideoEmbed } from "./VideoEmbed";
+import { VariantSelector } from "./VariantSelector";
 
 interface ProductDetailProps {
   product: Product;
@@ -26,11 +27,21 @@ export const ProductDetail = ({
 }: ProductDetailProps) => {
   const { t } = useTranslation();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+
+  const selectedVariant = useMemo(
+    () => product.variants?.find((v) => v.id === selectedVariantId),
+    [product.variants, selectedVariantId],
+  );
 
   const allImages = useMemo(() => {
-    const imgs = [...(product?.images || [])];
+    let imgs = [...(product?.images || [])];
+    // Show variant images only if a variant is selected AND has images
+    if (selectedVariantId && selectedVariant?.images && selectedVariant.images.length > 0) {
+      imgs = [...selectedVariant.images];
+    }
     return imgs;
-  }, [product]);
+  }, [product, selectedVariant, selectedVariantId]);
 
   const isMM = lang === "mm";
   const name = isMM ? product?.name_mm : (product?.name_en ?? "");
@@ -41,7 +52,7 @@ export const ProductDetail = ({
   const displayImage = activeImage.includes("cloudinary")
     ? activeImage.replace("/upload/", "/upload/f_auto,q_auto,w_1200/")
     : activeImage;
-  const activePrice = product?.price ?? 0;
+  const activePrice = selectedVariant?.priceOverride ?? product?.price ?? 0;
   const inStock = getProductInStock(product);
   const brandLabel = getBrandLabel(product?.brand);
 
@@ -133,42 +144,15 @@ export const ProductDetail = ({
               </p>
             </div>
 
-            {/* {product.variants?.length ? (
-              <div className="space-y-4 pt-8 border-t border-slate-100">
-                <p className="text-[10px] tracking-[0.2em] uppercase text-slate-400 font-bold">
-                  {t("availableVariants")}
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  {product.variants.map((variant) => (
-                    <button
-                      key={variant.id}
-                      onClick={() => handleVariantSelect(variant.id)}
-                      className={`px-5 py-2.5 rounded-2xl text-[11px] font-bold tracking-[0.1em] uppercase border transition-all duration-300 ${
-                        variant.id === selectedVariantId
-                          ? "bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-900/20"
-                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-400 hover:shadow-sm hover:-translate-y-0.5"
-                      }`}
-                    >
-                      {isMM ? variant.name_mm : variant.name_en}
-                    </button>
-                  ))}
-                </div>
-                {selectedVariant?.options?.length ? (
-                  <div className="text-xs text-slate-500 space-y-1">
-                    {selectedVariant.options.map((option) => (
-                      <div key={option.id} className="flex items-center gap-2">
-                        <span className="uppercase tracking-[0.2em] text-[10px] text-slate-400">
-                          {option.type}
-                        </span>
-                        <span className={isMM ? "font-myanmar" : ""}>
-                          {isMM ? option.value_mm : option.value_en}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : null} */}
+            {/* Variant Selector - Beautiful variant display */}
+            <VariantSelector
+              product={product}
+              lang={lang}
+              onSelectVariant={(variantId) => {
+                setSelectedVariantId(variantId || null);
+                setActiveImageIdx(0); // Reset to first image when variant changes
+              }}
+            />
 
             <div className="space-y-6 pt-12 border-t border-slate-100">
               <div className="space-y-4">

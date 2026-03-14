@@ -9,6 +9,7 @@ import type {
   VariantOptionDraft,
   Audience,
 } from "../../types";
+import { VariantBuilder } from "./VariantBuilder";
 
 interface AdminProductFormProps {
   onCancel: () => void;
@@ -47,7 +48,16 @@ export const AdminProductForm = ({
     imageUrl: "",
     videoUrl: "",
     variants: [],
+    variantGroups: [],
   });
+  const inputBase =
+    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200";
+  const textareaBase =
+    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200 resize-none";
+  const selectBase = `${inputBase} pr-8`;
+  const labelBase =
+    "block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2";
+  const sectionCard = "rounded-2xl border border-slate-200 bg-white p-6 shadow-sm";
 
   useEffect(() => {
     if (categoriesLoading || !categories.length) return;
@@ -284,6 +294,10 @@ export const AdminProductForm = ({
       );
       formPayload.append("categoryId", normalizedCategoryId);
       formPayload.append("audience", normalizedAudience);
+      formPayload.append(
+        "variantGroups",
+        JSON.stringify(formData.variantGroups ?? []),
+      );
       if (variantPayload) {
         formPayload.append("variants", JSON.stringify(variantPayload));
         if (Object.keys(variantImageMap).length > 0) {
@@ -309,6 +323,7 @@ export const AdminProductForm = ({
         imageUrl: "",
         videoUrl: "",
         variants: [],
+        variantGroups: [],
       });
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -325,177 +340,256 @@ export const AdminProductForm = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex items-center justify-between mb-12">
+    <div className="max-w-5xl mx-auto py-10 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-10">
         <button
           onClick={onCancel}
           className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors text-xs uppercase tracking-widest font-bold"
         >
           <ArrowLeft size={16} /> {isMM ? "ပြန်သွားရန်" : "Back"}
         </button>
-        <h2 className="text-2xl tracking-[0.3em] font-light uppercase">
-          {isMM ? "ပစ္စည်းအသစ်ထည့်ရန်" : "Add New Product"}
-        </h2>
+        <div className="text-right">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
+            Product Setup
+          </p>
+          <h2 className="text-2xl tracking-[0.3em] font-light uppercase">
+            {isMM ? "ပစ္စည်းအသစ်ထည့်ရန်" : "Add New Product"}
+          </h2>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-12">
+      <form onSubmit={handleSubmit} className="space-y-10">
         {/* Language Split Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <div className="space-y-6">
-            <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400 border-b pb-2">
-              English Details
-            </h3>
-            <div className="space-y-4">
-              <input
-                required
-                placeholder="Product Name"
-                className="w-full border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm"
-                value={formData.name_en}
-                onChange={(event) =>
-                  setFormData({ ...formData, name_en: event.target.value })
-                }
-              />
-              <textarea
-                placeholder="Description"
-                rows={3}
-                className="w-full border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm resize-none"
-                value={formData.description_en}
-                onChange={(event) =>
-                  setFormData({
-                    ...formData,
-                    description_en: event.target.value,
-                  })
-                }
-              />
+        <div className={sectionCard}>
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-6">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
+                Product Details
+              </p>
+              <h3 className="text-base font-semibold text-slate-900">
+                English and Burmese Information
+              </h3>
             </div>
+            <span className="text-xs uppercase tracking-[0.3em] text-slate-400">
+              Both required
+            </span>
           </div>
-          <div className="space-y-6">
-            <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400 border-b pb-2">
-              Burmese Details
-            </h3>
-            <div className="space-y-4">
-              <input
-                required
-                placeholder="ပစ္စည်းအမည်"
-                className="w-full border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm font-myanmar"
-                value={formData.name_mm}
-                onChange={(event) =>
-                  setFormData({ ...formData, name_mm: event.target.value })
-                }
-              />
-              <textarea
-                placeholder="အသေးစိတ်ဖော်ပြချက်"
-                rows={3}
-                className="w-full border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm resize-none font-myanmar"
-                value={formData.description_mm}
-                onChange={(event) =>
-                  setFormData({
-                    ...formData,
-                    description_mm: event.target.value,
-                  })
-                }
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-4">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
+                English
+              </p>
+              <div>
+                <label className={labelBase}>Product Name</label>
+                <input
+                  required
+                  placeholder="Product Name"
+                  className={inputBase}
+                  value={formData.name_en}
+                  onChange={(event) =>
+                    setFormData({ ...formData, name_en: event.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className={labelBase}>Description</label>
+                <textarea
+                  placeholder="Description"
+                  rows={4}
+                  className={textareaBase}
+                  value={formData.description_en}
+                  onChange={(event) =>
+                    setFormData({
+                      ...formData,
+                      description_en: event.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-4">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
+                Burmese
+              </p>
+              <div>
+                <label className={labelBase}>
+                  {isMM ? "Product Name (Burmese)" : "Product Name (Burmese)"}
+                </label>
+                <input
+                  required
+                  placeholder="Product Name (Burmese)"
+                  className={`${inputBase} font-myanmar`}
+                  value={formData.name_mm}
+                  onChange={(event) =>
+                    setFormData({ ...formData, name_mm: event.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className={labelBase}>
+                  {isMM ? "Description (Burmese)" : "Description (Burmese)"}
+                </label>
+                <textarea
+                  placeholder="Description (Burmese)"
+                  rows={4}
+                  className={`${textareaBase} font-myanmar`}
+                  value={formData.description_mm}
+                  onChange={(event) =>
+                    setFormData({
+                      ...formData,
+                      description_mm: event.target.value,
+                    })
+                  }
+                />
+              </div>
             </div>
           </div>
         </div>
-
         {/* Generic Info */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <input
-            required
-            type="number"
-            step="0.01"
-            placeholder="Price (USD)"
-            className="border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm"
-            value={formData.price}
-            onChange={(event) =>
-              setFormData({ ...formData, price: event.target.value })
-            }
-          />
-          <input
-            type="number"
-            placeholder={isMM ? "စုစုပေါင်း စတော့" : "Stock"}
-            className="border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm"
-            value={formData.stock}
-            onChange={(event) =>
-              setFormData({ ...formData, stock: event.target.value })
-            }
-          />
-          <input
-            placeholder="Brand Name"
-            className="border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm"
-            value={formData.brand}
-            onChange={(event) =>
-              setFormData({ ...formData, brand: event.target.value })
-            }
-          />
-          <select
-            className="border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm bg-transparent"
-            value={formData.audience}
-            onChange={(event) =>
-              setFormData({
-                ...formData,
-                audience: event.target.value as Audience,
-              })
-            }
-          >
-            <option value="all">{isMM ? "အားလုံး" : "All"}</option>
-            <option value="man">{isMM ? "အမျိုးသား" : "Man"}</option>
-            <option value="woman">{isMM ? "အမျိုးသမီး" : "Woman"}</option>
-            <option value="child">{isMM ? "ကလေး" : "Child"}</option>
-          </select>
-          <select
-            className="border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm bg-transparent"
-            value={formData.categoryId}
-            onChange={(event) =>
-              setFormData({
-                ...formData,
-                categoryId: event.target.value,
-              })
-            }
-            disabled={categoriesLoading || !categories.length}
-          >
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {isMM ? category.name_mm : category.name_en}
-              </option>
-            ))}
-          </select>
-          {categoriesLoading && (
-            <p className="text-xs text-slate-400">
-              {isMM
-                ? "အမျိုးအစားများကို ရယူနေပါသည်..."
-                : "Loading categories..."}
-            </p>
-          )}
-          {!categoriesLoading && !categories.length && (
-            <p className="text-xs text-red-500">
-              {isMM
-                ? "အမျိုးအစားဒေတာ မရရှိသေးပါ"
-                : "No categories available. Please seed categories first."}
-            </p>
-          )}
-          {categoriesError && (
-            <p className="text-xs text-red-500">{categoriesError}</p>
-          )}
+        <div className={sectionCard}>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
+                Pricing & Inventory
+              </p>
+              <h3 className="text-base font-semibold text-slate-900">
+                Core Product Settings
+              </h3>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h4 className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                Pricing
+              </h4>
+              <div>
+                <label className={labelBase}>Price (USD)</label>
+                <input
+                  required
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className={inputBase}
+                  value={formData.price}
+                  onChange={(event) =>
+                    setFormData({ ...formData, price: event.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className={labelBase}>
+                  {isMM ? "Stock" : "Stock"}
+                </label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  className={inputBase}
+                  value={formData.stock}
+                  onChange={(event) =>
+                    setFormData({ ...formData, stock: event.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                Classification
+              </h4>
+              <div>
+                <label className={labelBase}>Brand Name</label>
+                <input
+                  placeholder="Brand"
+                  className={inputBase}
+                  value={formData.brand}
+                  onChange={(event) =>
+                    setFormData({ ...formData, brand: event.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className={labelBase}>Audience</label>
+                <select
+                  className={selectBase}
+                  value={formData.audience}
+                  onChange={(event) =>
+                    setFormData({
+                      ...formData,
+                      audience: event.target.value as Audience,
+                    })
+                  }
+                >
+                  <option value="all">{isMM ? "All" : "All"}</option>
+                  <option value="man">{isMM ? "Man" : "Man"}</option>
+                  <option value="woman">{isMM ? "Woman" : "Woman"}</option>
+                  <option value="child">{isMM ? "Child" : "Child"}</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelBase}>Category</label>
+                <select
+                  className={selectBase}
+                  value={formData.categoryId}
+                  onChange={(event) =>
+                    setFormData({
+                      ...formData,
+                      categoryId: event.target.value,
+                    })
+                  }
+                  disabled={categoriesLoading || !categories.length}
+                >
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {isMM ? category.name_mm : category.name_en}
+                    </option>
+                  ))}
+                </select>
+                {categoriesLoading && (
+                  <p className="text-xs text-slate-400 mt-2">
+                    {isMM
+                      ? "Loading categories..."
+                      : "Loading categories..."}
+                  </p>
+                )}
+                {!categoriesLoading && !categories.length && (
+                  <p className="text-xs text-red-500 mt-2">
+                    {isMM
+                      ? "No categories available. Please seed categories first."
+                      : "No categories available. Please seed categories first."}
+                  </p>
+                )}
+                {categoriesError && (
+                  <p className="text-xs text-red-500 mt-2">{categoriesError}</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-
         {/* Image / Links */}
-        <div className="space-y-6">
-          <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400 border-b pb-2">
-            Media & Social Links
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className={sectionCard}>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
+                Media
+              </p>
+              <h3 className="text-base font-semibold text-slate-900">
+                Images and Video
+              </h3>
+            </div>
+            <span className="text-xs uppercase tracking-[0.3em] text-slate-400">
+              Images required
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div
-              className="border-2 border-dashed border-slate-100 rounded-xl p-8 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer group relative"
+              className="border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer group relative"
               onClick={() => fileInputRef.current?.click()}
             >
-              <Upload className="text-slate-300 group-hover:text-pink-500 mb-4 transition-colors" />
+              <Upload className="text-slate-300 group-hover:text-slate-900 mb-4 transition-colors" />
               <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-                {isMM ? "ဓာတ်ပုံရွေးရန် နှိပ်ပါ" : "Click to Select Images"}
+                {isMM ? "Click to Upload Images" : "Click to Upload Images"}
               </p>
               <p className="text-[10px] text-slate-400 mt-2">
-                {isMM ? "JPEG/PNG 5MB အထိ" : "JPEG/PNG up to 5MB"}
+                {isMM ? "JPEG/PNG up to 5MB" : "JPEG/PNG up to 5MB"}
               </p>
               {uploadPreview && (
                 <div className="mt-4 w-full max-w-[200px] aspect-square rounded-xl overflow-hidden">
@@ -516,46 +610,63 @@ export const AdminProductForm = ({
                   event.stopPropagation();
                 }}
               />
-              <input
-                type="text"
-                placeholder={
-                  isMM
-                    ? "Cloudinary URL ဖြင့် တင်မည်"
-                    : "Or Paste Cloudinary URL"
-                }
-                className="mt-4 w-full text-center border-none bg-transparent outline-none text-xs"
-                value={formData.imageUrl}
-                onChange={(event) =>
-                  setFormData({ ...formData, imageUrl: event.target.value })
-                }
-                onClick={(event) => event.stopPropagation()}
-              />
             </div>
             <div className="space-y-4">
-              <p className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400">
-                {isMM ? "ဗီဒီယို လင့်ခ်" : "Video Link"}
-              </p>
-              <input
-                type="url"
-                placeholder={
-                  isMM
-                    ? "YouTube သို့မဟုတ် TikTok URL"
-                    : "YouTube or TikTok URL"
-                }
-                className="w-full border-b border-slate-200 py-3 outline-none focus:border-slate-900 transition-colors text-sm"
-                value={formData.videoUrl}
-                onChange={(event) =>
-                  setFormData({ ...formData, videoUrl: event.target.value })
-                }
-              />
-              <p className="text-[10px] text-slate-400">
-                {isMM
-                  ? "ပစ္စည်းဗီဒီယို ပြသရန် YouTube/TikTok URL ထည့်ပါ"
-                  : "Paste a YouTube or TikTok URL to embed a product video"}
-              </p>
+              <div>
+                <label className={labelBase}>
+                  {isMM ? "Cloudinary Image URL (Optional)" : "Cloudinary Image URL (Optional)"}
+                </label>
+                <input
+                  type="text"
+                  placeholder={
+                    isMM
+                      ? "Paste Cloudinary URL"
+                      : "Paste Cloudinary URL"
+                  }
+                  className={inputBase}
+                  value={formData.imageUrl}
+                  onChange={(event) =>
+                    setFormData({ ...formData, imageUrl: event.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className={labelBase}>
+                  {isMM ? "Video Link (Optional)" : "Video Link (Optional)"}
+                </label>
+                <input
+                  type="url"
+                  placeholder={
+                    isMM
+                      ? "YouTube or TikTok URL"
+                      : "YouTube or TikTok URL"
+                  }
+                  className={inputBase}
+                  value={formData.videoUrl}
+                  onChange={(event) =>
+                    setFormData({ ...formData, videoUrl: event.target.value })
+                  }
+                />
+                <p className="text-[10px] text-slate-400 mt-2">
+                  {isMM
+                    ? "Paste a YouTube or TikTok URL to embed a product video"
+                    : "Paste a YouTube or TikTok URL to embed a product video"}
+                </p>
+              </div>
             </div>
           </div>
         </div>
+        <VariantBuilder
+          variantGroups={formData.variantGroups}
+          onChangeGroups={(groups) =>
+            setFormData({ ...formData, variantGroups: groups })
+          }
+          onGenerate={(variants) =>
+            setFormData({ ...formData, variants })
+          }
+          makeId={makeId}
+          isMM={isMM}
+        />
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400 border-b pb-2 flex-1">
@@ -819,3 +930,7 @@ export const AdminProductForm = ({
     </div>
   );
 };
+
+
+
+

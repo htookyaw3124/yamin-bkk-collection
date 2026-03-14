@@ -20,18 +20,36 @@ export class ProductService {
     files: Express.Multer.File[] = [],
   ) {
     const { variants: _variants, ...productPayload } = createProductDto;
-    let variants = _variants || [];
+    let variants: any[] = _variants || [];
+    console.log('Service Create DTO - Raw variants:', _variants, 'Type:', typeof _variants);
 
-    if (typeof variants === 'string') {
+    // Parse variants if they come as a JSON string
+    if (typeof _variants === 'string') {
       try {
-        variants = JSON.parse(variants);
+        variants = JSON.parse(_variants);
+        console.log('Parsed variants from string:', variants);
       } catch (e) {
+        console.error('Failed to parse variants string:', e);
         variants = [];
       }
+    } else if (Array.isArray(_variants)) {
+      variants = _variants;
+    } else {
+      variants = [];
     }
+
+    // Ensure variants is an array
     if (!Array.isArray(variants)) {
-        variants = [];
+      variants = [];
     }
+
+    // Filter out empty or invalid variants
+    variants = variants.filter(v => 
+      v && typeof v === 'object' && 
+      v.sku && v.name_en && v.name_mm
+    );
+
+    console.log('Normalized variants:', variants);
 
     const category = await this.prisma.category.findFirst({
       where: {
@@ -97,15 +115,15 @@ export class ProductService {
         images: productImages.length ? { create: productImages } : undefined,
         variants: variants.length
           ? {
-              create: variants.map((variant) => ({
-                sku: variant.sku,
+              create: variants.map((variant, index) => ({
+                sku: variant.sku || `VAR-${index + 1}`,
                 name_en: variant.name_en,
                 name_mm: variant.name_mm,
                 priceOverride: variant.priceOverride ?? undefined,
                 stock: Number(variant.stock ?? 0),
                 options: variant.options?.length
                   ? {
-                      create: variant.options.map((option) => ({
+                      create: variant.options.map((option: any) => ({
                         type: option.type,
                         value_en: option.value_en,
                         value_mm: option.value_mm,
