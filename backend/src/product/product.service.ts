@@ -180,8 +180,25 @@ export class ProductService {
     });
   }
 
-  async findAll() {
+  async findAll(search?: string) {
+    let whereCondition = {};
+
+    if (search) {
+      const ftsQuery = search.trim().split(/\s+/).join(' | ');
+
+      whereCondition = {
+        OR: [
+          { name_en: { search: ftsQuery } },
+          { category: { name_en: { search: ftsQuery } } },
+          
+          { name_mm: { contains: search } },
+          { category: { name_mm: { contains: search } } },
+        ],
+      };
+    }
+
     return this.prisma.product.findMany({
+      where: whereCondition,
       include: {
         images: true,
         category: true,
@@ -192,6 +209,9 @@ export class ProductService {
             images: true,
           },
         },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   }
