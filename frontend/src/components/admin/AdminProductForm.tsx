@@ -29,7 +29,7 @@ export const AdminProductForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isMM = lang === "mm";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [baseImageFiles, setBaseImageFiles] = useState<File[]>([]);
   const [createProduct] = useCreateProductMutation();
 
   const makeId = () =>
@@ -165,10 +165,17 @@ export const AdminProductForm = ({
   };
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setUploadPreview(URL.createObjectURL(file));
+    const files = event.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      setBaseImageFiles((current) => [...current, ...newFiles]);
     }
+  };
+
+  const removeBaseImage = (indexToRemove: number) => {
+    setBaseImageFiles((current) =>
+      current.filter((_, index) => index !== indexToRemove)
+    );
   };
 
   const handleVariantImageSelect = (
@@ -211,7 +218,7 @@ export const AdminProductForm = ({
 
     if (isSubmitting) return;
 
-    const baseFiles = fileInputRef.current?.files ? Array.from(fileInputRef.current.files) : [];
+    const baseFiles = baseImageFiles;
     
     let hasAnyImages = baseFiles.length > 0;
     formData.variants.forEach(variant => {
@@ -325,15 +332,6 @@ export const AdminProductForm = ({
         variants: [],
         variantGroups: [],
       });
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      setUploadPreview(null);
-    } catch (error) {
-      console.error("Product creation failed", error);
-      alert(
-        isMM ? "ပစ္စည်းထည့်ခြင်း မအောင်မြင်ပါ" : "Failed to create product.",
-      );
     } finally {
       setIsSubmitting(false);
     }
@@ -591,12 +589,20 @@ export const AdminProductForm = ({
               <p className="text-[10px] text-slate-400 mt-2">
                 {isMM ? "JPEG/PNG up to 5MB" : "JPEG/PNG up to 5MB"}
               </p>
-              {uploadPreview && (
-                <div className="mt-4 w-full max-w-[200px] aspect-square rounded-xl overflow-hidden">
-                  <img
-                    src={uploadPreview}
-                    className="w-full h-full object-cover"
-                  />
+              {baseImageFiles.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2 justify-center w-full" onClick={(e) => e.stopPropagation()}>
+                  {baseImageFiles.map((file, idx) => (
+                    <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden shadow-sm group border border-slate-200 bg-white">
+                      <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        className="absolute top-1 right-1 bg-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                        onClick={() => removeBaseImage(idx)}
+                      >
+                        <X size={12} className="text-red-500" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
               <input

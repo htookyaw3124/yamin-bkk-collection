@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUpdateProductMutation, useDeleteProductMutation } from "../../lib/api";
 import { Search, CheckCircle, Globe, Pencil, Trash2, X, Upload } from "lucide-react";
 import type {
@@ -39,6 +39,8 @@ export const AdminProductsPanel = ({
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
   const [stockFilter, setStockFilter] = useState<StockFilter>("All");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [editBaseImageFiles, setEditBaseImageFiles] = useState<File[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editForm, setEditForm] = useState({
     name_en: "",
@@ -55,11 +57,16 @@ export const AdminProductsPanel = ({
   });
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [updateProduct] = useUpdateProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
 
   useEffect(() => {
-    if (!editingProduct) return;
+    if (!editingProduct) {
+      setEditBaseImageFiles([]);
+      setImagesToDelete([]);
+      return;
+    }
     const categoryId =
       typeof editingProduct.category === "string"
         ? editingProduct.category
@@ -246,6 +253,25 @@ export const AdminProductsPanel = ({
     }));
   };
 
+  const handleBaseImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      setEditBaseImageFiles((current) => [...current, ...newFiles]);
+    }
+  };
+
+  const removeBaseImage = (indexToRemove: number) => {
+    setEditBaseImageFiles((current) =>
+      current.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const handleRemoveExistingImage = (imageUrl: string) => {
+    if (!window.confirm("Are you sure you want to delete this image? It will be removed when you save changes.")) return;
+    setImagesToDelete((current) => [...current, imageUrl]);
+  };
+
   const handleUpdate = async () => {
     if (!editingProduct) return;
     setIsSaving(true);
@@ -273,6 +299,12 @@ export const AdminProductsPanel = ({
         "variantGroups",
         JSON.stringify(editForm.variantGroups ?? []),
       );
+      if (imagesToDelete.length > 0) {
+        formPayload.append("imagesToDelete", JSON.stringify(imagesToDelete));
+      }
+
+      const allFiles: File[] = [...editBaseImageFiles];
+      const variantImageMap: Record<string, number[]> = {};
 
       if (editForm.variants.length > 0) {
         const variantPayload = editForm.variants.map((v) => ({
@@ -291,9 +323,6 @@ export const AdminProductsPanel = ({
 
         formPayload.append("variants", JSON.stringify(variantPayload));
 
-        // Images
-        const allFiles: File[] = [];
-        const variantImageMap: Record<string, number[]> = {};
         editForm.variants.forEach((v, vIdx) => {
           if (v.imageFiles && v.imageFiles.length > 0) {
             const indices: number[] = [];
@@ -304,9 +333,11 @@ export const AdminProductsPanel = ({
             variantImageMap[vIdx.toString()] = indices;
           }
         });
+      }
 
-        if (allFiles.length > 0) {
-          allFiles.forEach((file) => formPayload.append("images", file));
+      if (allFiles.length > 0) {
+        allFiles.forEach((file) => formPayload.append("images", file));
+        if (Object.keys(variantImageMap).length > 0) {
           formPayload.append("variantImageMap", JSON.stringify(variantImageMap));
         }
       }
@@ -570,6 +601,66 @@ export const AdminProductsPanel = ({
               onChange={(event) =>
                 setEditForm({ ...editForm, videoUrl: event.target.value })
               }
+            />
+          </div>
+
+          <div className="mt-8 border border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer group relative"
+               onClick={() => fileInputRef.current?.click()}>
+            <Upload className="text-slate-300 group-hover:text-slate-900 mb-4 transition-colors" />
+            <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+              {isMM ? "ဓာတ်ပုံအသစ်များ ထည့်ရန်" : "Add New Images"}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-2">
+              {isMM ? "JPEG/PNG up to 5MB" : "JPEG/PNG up to 5MB"}
+            </p>
+            
+            {(editBaseImageFiles.length > 0 || (editingProduct?.images && editingProduct.images.length > 0)) && (
+              <div className="mt-4 flex flex-wrap gap-2 justify-center w-full" onClick={(e) => e.stopPropagation()}>
+                {editingProduct?.images?.filter(img => !imagesToDelete.includes(img.url)).map((img, idx) => (
+                  <div key={`existing-${idx}`} className="relative w-20 h-20 rounded-xl overflow-hidden shadow-sm group/img border border-slate-200 bg-white">
+                    <img src={img.url} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 bg-white rounded-full p-1 opacity-0 group-hover/img:opacity-100 transition-opacity shadow-sm"
+                      onClick={() => handleRemoveExistingImage(img.url)}
+                      title="Delete Image"
+                    >
+                      <Trash2 size={12} className="text-red-500" />
+                    </button>
+                    {img.isMain && (
+                      <span className="absolute bottom-0 left-0 right-0 bg-slate-900/50 text-white text-[8px] text-center py-0.5 uppercase tracking-wider">
+                        Main
+                      </span>
+                    )}
+                  </div>
+                ))}
+                {editBaseImageFiles.map((file, idx) => (
+                  <div key={`new-${idx}`} className="relative w-20 h-20 rounded-xl overflow-hidden shadow-sm group/img border border-slate-200 bg-white">
+                    <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 bg-white rounded-full p-1 opacity-0 group-hover/img:opacity-100 transition-opacity shadow-sm"
+                      onClick={() => removeBaseImage(idx)}
+                    >
+                      <X size={12} className="text-red-500" />
+                    </button>
+                    <span className="absolute bottom-0 left-0 right-0 bg-pink-500/80 text-white text-[8px] text-center py-0.5 uppercase tracking-wider">
+                      New
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(event) => {
+                handleBaseImageSelect(event);
+                event.stopPropagation();
+              }}
             />
           </div>
 
