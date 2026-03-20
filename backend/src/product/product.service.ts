@@ -131,6 +131,8 @@ export class ProductService {
                         type: option.type,
                         value_en: option.value_en,
                         value_mm: option.value_mm,
+                        color: option.color,
+                        imageUrl: option.imageUrl,
                       })),
                     }
                   : undefined,
@@ -184,8 +186,12 @@ export class ProductService {
     });
   }
 
-  async findAll(search?: string) {
-    let whereCondition = {};
+  async findAll(search?: string, brandId?: string) {
+    let whereCondition: any = {};
+
+    if (brandId) {
+      whereCondition.brandId = brandId;
+    }
 
     if (search) {
       const ftsQuery = search.trim().split(/\s+/).join(' | ');
@@ -346,13 +352,16 @@ export class ProductService {
             variantGroups: rest.variantGroups as any,
             price: Number.isNaN(normalizedPrice) ? undefined : normalizedPrice,
             stock: Number.isNaN(normalizedStock) ? undefined : normalizedStock,
+            brand: rest.brandId
+              ? { connect: { id: rest.brandId } }
+              : undefined,
             category: resolvedCategoryId
               ? { connect: { id: resolvedCategoryId } }
               : undefined,
             images: productImages.length
               ? { create: productImages }
               : undefined,
-          },
+          } as any,
         });
 
         if (variants.length > 0) {
@@ -410,6 +419,8 @@ export class ProductService {
                       type: opt.type,
                       value_en: opt.value_en,
                       value_mm: opt.value_mm,
+                      color: opt.color,
+                      imageUrl: opt.imageUrl,
                       variantId,
                     })),
                   });
@@ -426,6 +437,8 @@ export class ProductService {
                           type: opt.type,
                           value_en: opt.value_en,
                           value_mm: opt.value_mm,
+                          color: opt.color,
+                          imageUrl: opt.imageUrl,
                         })),
                       }
                     : undefined,

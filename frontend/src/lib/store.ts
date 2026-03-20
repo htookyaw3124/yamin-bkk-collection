@@ -1,12 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { yaminApi } from './api';
+import { TWINApi } from './api';
 
 export const store = configureStore({
   reducer: {
-    [yaminApi.reducerPath]: yaminApi.reducer,
+    [TWINApi.reducerPath]: TWINApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(yaminApi.middleware),
+    getDefaultMiddleware().concat(TWINApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

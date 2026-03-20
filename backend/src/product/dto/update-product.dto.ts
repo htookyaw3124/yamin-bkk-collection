@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  IsUUID,
   ValidateIf,
 } from 'class-validator';
 
@@ -54,6 +55,10 @@ export class UpdateProductDto {
   @IsEnum(Audience)
   @IsOptional()
   audience?: Audience;
+
+  @IsUUID()
+  @IsOptional()
+  brandId?: string;
 
   @Transform(
     ({ value }: { value: unknown }) =>

@@ -1,211 +1,286 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft,
   MessageCircle,
   Send,
-  Phone,
-  Music2,
   Globe,
+  X,
+  ArrowLeft,
 } from "lucide-react";
-import type { Product, Lang } from "../../types";
-import { getProductInStock, getBrandLabel } from "../../utils/helpers";
-import { MESSENGER_URL, TELEGRAM_URL, TIKTOK_URL } from "../../constants";
+import type { Lang } from "../../types";
+import { getProductInStock, getCategoryLabel } from "../../utils/helpers";
+import { MESSENGER_URL, TELEGRAM_URL } from "../../constants";
 import { VideoEmbed } from "./VideoEmbed";
 import { VariantSelector } from "./VariantSelector";
 
+import { useGetProductQuery } from "../../lib/api";
+
 interface ProductDetailProps {
-  product: Product;
+  productId: string;
   lang: Lang;
   onClose: () => void;
+  isPage?: boolean;
 }
 
 export const ProductDetail = ({
-  product,
+  productId,
   lang,
   onClose,
+  isPage = false,
 }: ProductDetailProps) => {
+  const { data: product, isLoading, error } = useGetProductQuery(productId);
   const { t } = useTranslation();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
+    null,
+  );
 
   const selectedVariant = useMemo(
-    () => product.variants?.find((v) => v.id === selectedVariantId),
-    [product.variants, selectedVariantId],
+    () => product?.variants?.find((v) => v.id === selectedVariantId),
+    [product?.variants, selectedVariantId],
   );
 
   const allImages = useMemo(() => {
-    let imgs = [...(product?.images || [])];
-    // Show variant images only if a variant is selected AND has images
-    if (selectedVariantId && selectedVariant?.images && selectedVariant.images.length > 0) {
-      imgs = [...selectedVariant.images];
-    }
-    return imgs;
-  }, [product, selectedVariant, selectedVariantId]);
+    if (!product) return [];
+    const imgs = [...(product.images || [])];
+    
+    // Add all unique images from variants and their options
+    product.variants?.forEach(v => {
+      v.images?.forEach(vImg => {
+        if (!imgs.some(img => img.url === vImg.url)) {
+          imgs.push(vImg);
+        }
+      });
+      v.options?.forEach(opt => {
+        if (opt.imageUrl && !imgs.some(img => img.url === opt.imageUrl)) {
+          imgs.push({ url: opt.imageUrl, isMain: false });
+        }
+      });
+    });
 
+    return imgs;
+  }, [product]);
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
+        <div className="w-12 h-12 border-4 border-slate-900 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
+        <div className="text-center space-y-4">
+          <p className="text-slate-500">Failed to load product details</p>
+          <button
+            onClick={onClose}
+            className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-900 pb-1"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const targetProduct = product!;
   const isMM = lang === "mm";
-  const name = isMM ? product?.name_mm : (product?.name_en ?? "");
-  const description = isMM
-    ? product?.description_mm
-    : (product?.description_en ?? "");
+  const name = isMM ? targetProduct.name_mm : targetProduct.name_en;
+  const description = isMM ? targetProduct.description_mm : targetProduct.description_en;
   const activeImage = allImages[activeImageIdx]?.url ?? "";
   const displayImage = activeImage.includes("cloudinary")
     ? activeImage.replace("/upload/", "/upload/f_auto,q_auto,w_1200/")
     : activeImage;
-  const activePrice = selectedVariant?.priceOverride ?? product?.price ?? 0;
-  const inStock = getProductInStock(product);
-  const brandLabel = getBrandLabel(product?.brand);
+  const activePrice = selectedVariant?.priceOverride ?? targetProduct.price ?? 0;
+  const inStock = getProductInStock(targetProduct);
+  const brandName = typeof targetProduct.brand === 'string' ? targetProduct.brand : targetProduct.brand?.name;
 
   const getOrderMessage = () => {
-    const itemName = isMM ? product.name_mm : product.name_en;
+    const itemName = isMM ? targetProduct.name_mm : targetProduct.name_en;
     const type = inStock ? "Order" : "Pre-Order";
     return encodeURIComponent(`Hello! I would like to ${type}: ${itemName}`);
   };
 
   return (
-    <div className="max-w-screen-2xl mx-auto py-12 px-6 lg:px-12 animate-in fade-in duration-700">
-      <div className="mb-12">
-        <button
+    <div className={isPage ? "w-full min-h-screen bg-white pb-20" : "fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 lg:p-8"}>
+      {/* Sophisticated Backdrop - Only for Modal */}
+      {!isPage && (
+        <div 
+          className="absolute inset-0 bg-slate-900/40 backdrop-blur-xl transition-opacity animate-in fade-in duration-500"
           onClick={onClose}
-          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors text-[10px] uppercase tracking-[0.2em] font-bold"
-        >
-          <ArrowLeft size={14} /> {t("backToShop")}
-        </button>
-      </div>
+        ></div>
+      )}
+      
+      {/* Modal/Page Container */}
+      <div className={`relative bg-white w-full flex flex-col md:flex-row overflow-hidden select-none ${
+        isPage 
+          ? "max-w-5xl mx-auto md:my-12 md:rounded-[3rem] md:shadow-2xl border border-slate-100" 
+          : "max-w-5xl sm:rounded-3xl shadow-2xl h-[92vh] sm:h-auto sm:max-h-[90vh] lg:max-h-[85vh] animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-500 ease-out fill-mode-backwards"
+      }`}>
+        
+        {/* Navigation - Conditional */}
+        {isPage ? (
+          <button 
+            onClick={onClose}
+            className="absolute top-6 left-6 md:top-10 md:left-10 z-50 p-4 bg-white/80 hover:bg-white text-slate-900 rounded-2xl backdrop-blur-md shadow-xl transition-all active:scale-95 group flex items-center gap-3 border border-slate-100"
+          >
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-[10px] font-black uppercase tracking-widest">{t("back")}</span>
+          </button>
+        ) : (
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 z-50 p-2.5 bg-white/80 hover:bg-white text-slate-900 rounded-full backdrop-blur-md shadow-lg transition-all active:scale-95 group"
+          >
+            <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+          </button>
+        )}
 
-      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-16 lg:gap-24 relative">
-        {/* Gallery */}
-        <div className="lg:col-span-7 flex flex-col gap-6 lg:sticky lg:top-32 h-max">
-          <div className="aspect-[4/5] w-full overflow-hidden bg-slate-50 rounded-3xl shadow-sm relative group">
+        {/* Left: Image Section */}
+        <div className={`w-full ${isPage ? "md:w-1/2" : "md:w-[55%]"} bg-slate-50 relative overflow-hidden group border-r border-slate-100/50`}>
+          <div className={`relative ${isPage ? "aspect-square md:aspect-auto md:h-full" : "aspect-square sm:aspect-auto sm:h-full"} w-full overflow-hidden`}>
+            {/* Desktop Thumbnails (Side) */}
+            {isPage && allImages.length > 1 && (
+              <div className="absolute left-6 top-1/2 -translate-y-1/2 z-30 hidden lg:flex flex-col gap-3">
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImageIdx(idx)}
+                    className={`w-14 aspect-[4/5] rounded-xl overflow-hidden border-2 transition-all duration-300 hover:scale-110 shadow-lg ${
+                      idx === activeImageIdx ? "border-white scale-110 shadow-white/20" : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={img.url} className="w-full h-full object-cover" alt="" />
+                  </button>
+                ))}
+              </div>
+            )}
+
             <img
               src={displayImage}
               alt={name}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
             />
+            
+            {/* Gallery Navigation - Dots (Shown on Mobile or Non-Page) */}
+            {allImages.length > 1 && (
+              <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/10 backdrop-blur-md rounded-full shadow-lg z-20 ${isPage ? "lg:hidden" : ""}`}>
+                {allImages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImageIdx(idx)}
+                    className={`transition-all duration-300 ${
+                      idx === activeImageIdx
+                        ? "w-4 h-1.5 bg-white shadow-sm"
+                        : "w-1.5 h-1.5 bg-white/50 hover:bg-white"
+                    } rounded-full`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
-            {allImages.map((img, idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveImageIdx(idx)}
-                className={`flex-none w-24 aspect-[4/5] rounded-xl overflow-hidden cursor-pointer transition-all snap-start ${
-                  idx === activeImageIdx
-                    ? "ring-2 ring-slate-900 opacity-100"
-                    : "opacity-60 hover:opacity-100 hover:ring-2 hover:ring-slate-200"
-                }`}
-              >
-                <img
-                  src={img.url}
-                  className="w-full h-full object-cover grayscale-0"
-                />
-              </button>
-            ))}
-          </div>
-          {product.videoUrl && (
-            <div className="mt-4">
-              <VideoEmbed url={product.videoUrl} />
-            </div>
-          )}
         </div>
 
-        {/* Content */}
-        <div className="lg:col-span-5 flex flex-col justify-start">
-          <div className="space-y-8">
-            <header className="space-y-4">
-              {brandLabel && (
-                <p className="text-[10px] tracking-[0.4em] uppercase text-pink-500 font-bold">
-                  {brandLabel}
-                </p>
-              )}
-              <h1
-                className={`text-slate-900 font-light ${
-                  isMM
-                    ? "text-4xl leading-tight font-myanmar"
-                    : "text-5xl tracking-tight"
-                }`}
-              >
-                {name}
-              </h1>
-              <p className="text-2xl font-medium text-slate-900">
-                {activePrice.toLocaleString()} MMK
-              </p>
-            </header>
-
-            <div className="space-y-4 pt-8 border-t border-slate-100">
-              <p className="text-[10px] tracking-[0.2em] uppercase text-slate-400 font-bold">
-                {t("details")}
-              </p>
-              <p
-                className={`text-slate-600 leading-relaxed ${
-                  isMM ? "text-lg font-myanmar" : "text-sm font-light"
-                }`}
-              >
-                {description}
-              </p>
+        {targetProduct.videoUrl && (
+          <div className="p-4 bg-slate-50 border-t border-slate-100">
+            <div className="rounded-2xl overflow-hidden shadow-lg">
+              <VideoEmbed url={targetProduct.videoUrl} />
             </div>
+          </div>
+        )}
 
-            {/* Variant Selector - Beautiful variant display */}
+        <div className={`w-full ${isPage ? "md:w-1/2" : "md:w-1/2"} p-6 md:p-10 lg:p-12 flex flex-col overflow-y-auto bg-white`}>
+          <div className="flex items-center space-x-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] mb-4">
+            {brandName && <span className="text-pink-500/80">{brandName}</span>}
+            {brandName && <span className="opacity-30">•</span>}
+            <span>{getCategoryLabel(targetProduct.category)}</span>
+            {(targetProduct.isSale || (targetProduct.originalPrice && targetProduct.originalPrice > targetProduct.price)) && (
+              <>
+                <span className="opacity-30">•</span>
+                <span className="text-emerald-500 font-black">{t("sale")}</span>
+              </>
+            )}
+          </div>
+          
+          <h2 className={`font-black text-slate-900 mb-4 ${isMM ? 'text-2xl font-myanmar leading-tight' : 'text-3xl tracking-tight'}`}>{name}</h2>
+          
+          <div className="flex items-end space-x-3 mb-8">
+            <p className="text-xl md:text-2xl font-black text-slate-900 uppercase">
+              {activePrice.toLocaleString()} MMK
+            </p>
+            {targetProduct.originalPrice && targetProduct.originalPrice > targetProduct.price && (
+              <p className="text-lg text-slate-400 line-through mb-0.5 uppercase font-medium">
+                {targetProduct.originalPrice.toLocaleString()} MMK
+              </p>
+            )}
+          </div>
+          
+          <div className="space-y-4 mb-10">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">
+              {t("details")}
+            </h4>
+            <p className={`text-slate-500 leading-relaxed ${isMM ? 'text-xl font-myanmar' : 'text-base font-light'}`}>
+              {description}
+            </p>
+          </div>
+          
+          {/* Variant Selector */}
+          <div className="mb-10">
             <VariantSelector
-              product={product}
+              product={targetProduct}
               lang={lang}
               onSelectVariant={(variantId) => {
                 setSelectedVariantId(variantId || null);
-                setActiveImageIdx(0); // Reset to first image when variant changes
+                setActiveImageIdx(0);
+              }}
+              onOptionSelect={(imageUrl) => {
+                if (imageUrl) {
+                  const idx = allImages.findIndex(img => img.url === imageUrl);
+                  if (idx !== -1) {
+                    setActiveImageIdx(idx);
+                  }
+                }
               }}
             />
-
-            <div className="space-y-6 pt-12 border-t border-slate-100">
-              <div className="space-y-4">
-                <p className="text-[10px] tracking-[0.2em] uppercase text-slate-400 font-bold">
-                  {t("orderNowViaSocial")}
-                </p>
-                <div className="flex gap-4">
-                  <a
-                    href={`${MESSENGER_URL}?text=${getOrderMessage()}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 bg-blue-600 text-white py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-600/30 hover:-translate-y-1 text-[10px] font-bold uppercase tracking-widest"
-                  >
-                    <MessageCircle size={18} /> Messenger
-                  </a>
-                  <a
-                    href={`${TELEGRAM_URL}?text=${getOrderMessage()}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 bg-sky-500 text-white py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-sky-600 transition-all shadow-lg hover:shadow-sky-500/30 hover:-translate-y-1 text-[10px] font-bold uppercase tracking-widest"
-                  >
-                    <Send size={18} /> Telegram
-                  </a>
-                </div>
-                <div className="flex gap-4 mt-4">
-                  <a
-                    href={`viber://forward?text=${getOrderMessage()}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 bg-purple-600 text-white py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-purple-700 transition-all shadow-lg hover:shadow-purple-600/30 hover:-translate-y-1 text-[10px] font-bold uppercase tracking-widest"
-                  >
-                    <Phone size={18} /> Viber
-                  </a>
-                  <a
-                    href={TIKTOK_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 bg-black text-white py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-zinc-800 transition-all shadow-lg hover:shadow-black/30 hover:-translate-y-1 text-[10px] font-bold uppercase tracking-widest"
-                  >
-                    <Music2 size={18} /> TikTok
-                  </a>
-                </div>
-              </div>
+          </div>
+          
+          <div className="mt-auto space-y-4 pt-8 border-t border-slate-100">
+            <div className="grid grid-cols-2 gap-4">
+              <a
+                href={`${MESSENGER_URL}?text=${getOrderMessage()}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-5 rounded-2xl flex flex-col items-center justify-center gap-1.5 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-[0.2em] shadow-xl"
+              >
+                <MessageCircle size={20} strokeWidth={2.5} />
+                <span>Messenger</span>
+              </a>
+              <a
+                href={`${TELEGRAM_URL}?text=${getOrderMessage()}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-gradient-to-r from-sky-500 to-sky-400 text-white py-5 rounded-2xl flex flex-col items-center justify-center gap-1.5 hover:-translate-y-1 hover:shadow-2xl hover:shadow-sky-500/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-[0.2em] shadow-xl"
+              >
+                <Send size={20} strokeWidth={2.5} />
+                <span>Telegram</span>
+              </a>
             </div>
+            
+            <button 
+              onClick={onClose}
+              className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-[10px] hover:bg-slate-800 transition-colors shadow-xl"
+            >
+              {t("continueShopping")}
+            </button>
 
-            <div className="pt-8 text-slate-400 text-[10px] uppercase tracking-widest flex items-center gap-4">
+            <div className="flex items-center justify-between pt-4 text-[10px] uppercase tracking-widest text-slate-400">
               <div className="flex items-center gap-2">
-                <div
-                  className={`w-1.5 h-1.5 rounded-full ${inStock ? "bg-emerald-500" : "bg-purple-500"}`}
-                />
+                <div className={`w-1.5 h-1.5 rounded-full ${inStock ? "bg-emerald-500 animate-pulse" : "bg-purple-500 animate-pulse"}`} />
                 {t(inStock ? "inStock" : "preOrder")}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 italic opacity-80">
                 <Globe size={12} /> {t("shippingFromBKK")}
               </div>
             </div>

@@ -1,16 +1,6 @@
 import { useTranslation } from "react-i18next";
-import {
-  CheckCircle,
-  MessageCircle,
-  Send,
-  Phone,
-  Music2,
-  XCircle,
-} from "lucide-react";
 import type { Product, Lang } from "../../types";
-import { getProductInStock, getBrandLabel } from "../../utils/helpers";
-import { SocialButton } from "../common/SocialButton";
-import { MESSENGER_URL, TELEGRAM_URL, TIKTOK_URL } from "../../constants";
+import { getBrandLabel, getCategoryLabel } from "../../utils/helpers";
 
 interface ProductCardProps {
   product: Product;
@@ -30,107 +20,71 @@ export const ProductCard = ({
   const displayImage = imageUrl.includes("cloudinary")
     ? imageUrl.replace("/upload/", "/upload/f_auto,q_auto,w_800/")
     : imageUrl;
-  const inStock = getProductInStock(product);
   const brandLabel = getBrandLabel(product.brand);
 
-  const variantCount = product.variants?.length ?? 0;
-
   return (
-    <div className="group relative bg-white transition-all duration-700">
-      <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
+    <div 
+      className="group relative flex flex-col animate-in fade-in duration-700"
+      onClick={() => onViewDetails(product.id)}
+    >
+      <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-slate-100 shadow-sm group-hover:shadow-2xl group-hover:shadow-pink-500/10 transition-all duration-700">
         <img
           src={displayImage}
           alt={name}
           className="h-full w-full object-cover object-center transition-transform duration-1000 group-hover:scale-110"
           loading="lazy"
         />
-        {/* Stock badge */}
-        <div className="absolute top-3 left-3 z-20">
-          <span
-            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] uppercase tracking-[0.2em] font-bold ${
-              inStock
-                ? "bg-emerald-500/90 text-white"
-                : "bg-rose-500/90 text-white"
+        
+        {/* Overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+        
+        <div className="absolute top-4 left-4 flex flex-col gap-2 z-20">
+          <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-[8px] font-bold uppercase tracking-wider text-slate-700 shadow-sm w-fit">
+            {getCategoryLabel(product.category)}
+          </div>
+          {(product.isSale || (product.originalPrice && product.originalPrice > product.price)) && (
+            <div className="bg-pink-500 text-white px-2 py-1 rounded text-[8px] font-bold uppercase tracking-wider shadow-sm w-fit animate-pulse">
+              {t("sale")}
+            </div>
+          )}
+        </div>
+
+        {/* Quick View Button (Desktop) */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0 translate-x-2">
+           <div className="bg-slate-900/40 backdrop-blur-md text-white px-6 py-2.5 rounded-full text-[9px] font-bold tracking-[0.2em] uppercase shadow-xl transition-colors hover:bg-slate-900">
+             {t("seeDetail")}
+           </div>
+        </div>
+      </div>
+
+      <div className="pt-8 text-left space-y-1">
+        <div className="flex items-center justify-between">
+          <h3
+            className={`text-slate-900 font-bold line-clamp-1 transition-colors group-hover:text-pink-600 ${
+              isMM
+                ? "text-lg leading-relaxed font-myanmar"
+                : "text-sm tracking-tight"
             }`}
           >
-            {inStock ? <CheckCircle size={12} /> : <XCircle size={12} />}
-            {t(inStock ? "inStock" : "preOrder")}
-          </span>
-        </div>
-
-        {/* Desktop only: hover overlay with social links */}
-        <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500 hidden lg:flex flex-col items-center justify-center gap-6">
-          <p className="text-white text-[10px] tracking-[0.3em] font-bold uppercase drop-shadow-md">
-            {t("quickOrder")}
-          </p>
-          <div className="flex gap-4">
-            <SocialButton
-              href={MESSENGER_URL}
-              color="hover:bg-blue-500"
-              icon={<MessageCircle size={20} />}
-              label={t("orderVia", { app: "Messenger" })}
-            />
-            <SocialButton
-              href={TELEGRAM_URL}
-              color="hover:bg-sky-500"
-              icon={<Send size={20} />}
-              label={t("orderVia", { app: "Telegram" })}
-            />
-            <SocialButton
-              href={`viber://forward?text=${encodeURIComponent(`Hello! I would like to Order: ${product.name_en}`)}`}
-              color="hover:bg-purple-600"
-              icon={<Phone size={20} />}
-              label={t("orderVia", { app: "Viber" })}
-            />
-            <SocialButton
-              href={TIKTOK_URL}
-              color="hover:bg-black"
-              icon={<Music2 size={20} />}
-              label={t("orderVia", { app: "TikTok" })}
-            />
+            {name}
+          </h3>
+          <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </div>
-          <button
-            onClick={() => onViewDetails(product.id)}
-            className="bg-white/90 backdrop-blur-sm text-slate-900 px-6 py-2 text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-white transition-all transform translate-y-4 group-hover:translate-y-0 duration-500"
-          >
-            {t("viewDetails")}
-          </button>
         </div>
-      </div>
-
-      {/* Mobile only: view details button below image */}
-      <div className="mt-3 lg:hidden">
-        <button
-          onClick={() => onViewDetails(product.id)}
-          className="w-full py-2 bg-slate-900 text-white text-[9px] font-bold uppercase tracking-[0.15em] rounded-full hover:bg-slate-800 transition-colors"
-        >
-          {t("viewDetails")}
-        </button>
-      </div>
-
-      <div className="pt-4 lg:pt-6 pb-4 text-center">
-        {brandLabel && (
-          <p className="text-[9px] tracking-[0.3em] uppercase text-pink-500 font-bold mb-1.5">
-            {brandLabel}
-          </p>
-        )}
-        <h3
-          className={`text-slate-900 font-light ${
-            isMM
-              ? "text-lg leading-relaxed mb-1 font-myanmar"
-              : "text-md tracking-tight mb-0"
-          }`}
-        >
-          {name}
-        </h3>
-        {variantCount > 0 && (
-          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-1">
-            {t("variantsAvailable", { count: variantCount })}
-          </p>
-        )}
-        <p className="text-slate-900 font-medium text-sm mt-1">
-          {product.price.toLocaleString()} MMK
-        </p>
+        
+        <p className="text-[10px] text-slate-400 capitalize">{brandLabel}</p>
+        
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-lg font-bold text-slate-900 uppercase tracking-tighter">
+            {product.price.toLocaleString()} MMK
+          </span>
+          {product.originalPrice && product.originalPrice > product.price && (
+            <span className="text-xs text-slate-400 line-through">
+              {product.originalPrice.toLocaleString()} MMK
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

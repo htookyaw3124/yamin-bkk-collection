@@ -25,6 +25,15 @@ export class VariantOptionDto {
   @IsString()
   @IsNotEmpty()
   value_mm: string;
+
+  @IsString()
+  @IsOptional()
+  color?: string;
+
+  @IsString()
+  @IsUrl()
+  @IsOptional()
+  imageUrl?: string;
 }
 
 export class CreateVariantDto {

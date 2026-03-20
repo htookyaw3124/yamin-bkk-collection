@@ -8,6 +8,7 @@ import type {
   VariantDraft,
   VariantOptionDraft,
   Audience,
+  Brand,
 } from "../../types";
 import { VariantBuilder } from "./VariantBuilder";
 
@@ -15,6 +16,7 @@ interface AdminProductFormProps {
   onCancel: () => void;
   lang: Lang;
   categories: Category[];
+  brands: Brand[];
   categoriesLoading?: boolean;
   categoriesError?: string | null;
 }
@@ -23,6 +25,7 @@ export const AdminProductForm = ({
   onCancel,
   lang,
   categories,
+  brands,
   categoriesLoading = false,
   categoriesError = null,
 }: AdminProductFormProps) => {
@@ -42,7 +45,7 @@ export const AdminProductForm = ({
     description_mm: "",
     price: "",
     stock: "",
-    brand: "",
+    brandId: "",
     categoryId: "",
     audience: "all",
     imageUrl: "",
@@ -295,13 +298,10 @@ export const AdminProductForm = ({
       formPayload.append("description_en", formData.description_en);
       formPayload.append("description_mm", formData.description_mm);
       formPayload.append("price", price.toString());
-      formPayload.append(
-        "stock",
-        Number.isNaN(normalizedStock) ? "0" : normalizedStock.toString(),
-      );
+      formPayload.append("stock", Number.isNaN(normalizedStock) ? "0" : normalizedStock.toString());
       formPayload.append("categoryId", normalizedCategoryId);
-      if (formData.brand.trim()) {
-        formPayload.append("brand", formData.brand.trim());
+      if (formData.brandId) {
+        formPayload.append("brandId", formData.brandId);
       }
       formPayload.append("audience", normalizedAudience);
       formPayload.append(
@@ -327,7 +327,7 @@ export const AdminProductForm = ({
         description_mm: "",
         price: "",
         stock: "",
-        brand: "",
+        brandId: "",
         categoryId: categories[0]?.id ?? "",
         audience: "all",
         imageUrl: "",
@@ -497,15 +497,21 @@ export const AdminProductForm = ({
                 Classification
               </h4>
               <div>
-                <label className={labelBase}>Brand Name</label>
-                <input
-                  placeholder="Brand"
-                  className={inputBase}
-                  value={formData.brand}
+                <label className={labelBase}>Brand</label>
+                <select
+                  className={selectBase}
+                  value={formData.brandId}
                   onChange={(event) =>
-                    setFormData({ ...formData, brand: event.target.value })
+                    setFormData({ ...formData, brandId: event.target.value })
                   }
-                />
+                >
+                  <option value="">{isMM ? "အမှတ်တံဆိပ် မရှိပါ" : "No Brand"}</option>
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className={labelBase}>Audience</label>
@@ -674,7 +680,6 @@ export const AdminProductForm = ({
             setFormData({ ...formData, variants })
           }
           makeId={makeId}
-          isMM={isMM}
         />
         <div className="space-y-6">
           <div className="flex items-center justify-between">

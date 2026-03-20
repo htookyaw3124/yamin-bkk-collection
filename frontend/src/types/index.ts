@@ -23,6 +23,8 @@ export type VariantOption = {
   type: string;
   value_en: string;
   value_mm: string;
+  color?: string;
+  imageUrl?: string;
 };
 
 export type ProductVariant = {
@@ -41,12 +43,16 @@ export type VariantOptionDraft = {
   type: string;
   value_en: string;
   value_mm: string;
+  color?: string;
+  imageUrl?: string;
 };
 
 export type VariantGroupValue = {
   id: string;
   value_en: string;
   value_mm: string;
+  color?: string;
+  imageUrl?: string;
 };
 
 export type VariantGroup = {
@@ -67,6 +73,12 @@ export type VariantDraft = {
   imageFiles?: File[];
 };
 
+export type Brand = {
+  id: string;
+  name: string;
+  logo_url?: string;
+};
+
 export type Product = {
   id: string;
   name_en: string;
@@ -74,7 +86,10 @@ export type Product = {
   description_en: string;
   description_mm: string;
   price: number;
-  brand: string | { name?: string } | null;
+  originalPrice?: number;
+  isSale?: boolean;
+  brand: Brand | null;
+  brandId?: string;
   category: ProductCategoryValue;
   stock: number;
   audience: Audience;
@@ -108,7 +123,7 @@ export type AdminFormState = {
   description_mm: string;
   price: string;
   stock: string;
-  brand: string;
+  brandId: string;
   categoryId: string;
   audience: Audience;
   imageUrl: string;

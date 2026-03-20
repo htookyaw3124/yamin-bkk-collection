@@ -9,15 +9,16 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-family: var(--font-sans);
+    font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
   }
 
-  html[lang="mm"] {
-    font-family: var(--font-myanmar);
+  html[lang="mm"], [lang="mm"] {
+    font-family: var(--font-myanmar, "Noto Sans Myanmar", ui-sans-serif, system-ui);
   }
 
   body {
-    @apply bg-slate-50 text-slate-900;
+    background-color: #f8fafc; /* slate-50 */
+    color: #0f172a; /* slate-900 */
   }
 }
 
@@ -54,6 +55,8 @@
 .filter-chip-active {
   background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
   position: relative;
+  color: white;
+  border-color: transparent;
 }
 
 .filter-chip-active::after {
@@ -68,4 +71,21 @@
   border-radius: 2px;
 }
 
-/* Ensure font is loaded via Google Fonts in index.html */
+/* Animation utilities */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoom-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-zoom-in {
+  animation: zoom-in 0.3s ease-out forwards;
+}

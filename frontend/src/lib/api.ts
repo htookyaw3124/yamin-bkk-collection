@@ -1,9 +1,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { API_URL, TOKEN_KEY } from '../constants';
-import type { Product, Category, Customer, Order } from '../types';
+import type { Product, Category, Customer, Order, Brand } from '../types';
 
-export const yaminApi = createApi({
-  reducerPath: 'yaminApi',
+export const TWINApi = createApi({
+  reducerPath: 'TWINApi',
   baseQuery: fetchBaseQuery({
     baseUrl: API_URL,
     prepareHeaders: (headers) => {
@@ -21,10 +21,10 @@ export const yaminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Product', 'Category', 'Customer', 'Order'],
+  tagTypes: ['Product', 'Category', 'Customer', 'Order', 'Brand'],
   endpoints: (builder) => ({
-    getProducts: builder.query<Product[], void>({
-      query: () => '/products',
+    getProducts: builder.query<Product[], string | void>({
+      query: (brandId) => (brandId ? `/products?brandId=${brandId}` : '/products'),
       providesTags: ['Product'],
     }),
     getProduct: builder.query<Product, string>({
@@ -57,6 +57,33 @@ export const yaminApi = createApi({
     getCategories: builder.query<Category[], void>({
       query: () => '/categories',
       providesTags: ['Category'],
+    }),
+    getBrands: builder.query<Brand[], void>({
+      query: () => '/brands',
+      providesTags: ['Brand'],
+    }),
+    createBrand: builder.mutation<Brand, Partial<Brand>>({
+      query: (newBrand) => ({
+        url: '/brands',
+        method: 'POST',
+        body: newBrand,
+      }),
+      invalidatesTags: ['Brand'],
+    }),
+    updateBrand: builder.mutation<Brand, { id: string; payload: Partial<Brand> }>({
+      query: ({ id, payload }) => ({
+        url: `/brands/${id}`,
+        method: 'PATCH',
+        body: payload,
+      }),
+      invalidatesTags: ['Brand'],
+    }),
+    deleteBrand: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/brands/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Brand'],
     }),
     createCategory: builder.mutation<Category, any>({
       query: (newCategory) => ({
@@ -152,4 +179,8 @@ export const {
   useCreateOrderMutation,
   useUpdateOrderMutation,
   useDeleteOrderMutation,
-} = yaminApi;
+  useGetBrandsQuery,
+  useCreateBrandMutation,
+  useUpdateBrandMutation,
+  useDeleteBrandMutation,
+} = TWINApi;

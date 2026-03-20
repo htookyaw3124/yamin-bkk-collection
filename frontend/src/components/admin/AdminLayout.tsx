@@ -7,33 +7,42 @@ import {
   ClipboardList,
   Menu,
   X,
+  Award,
 } from "lucide-react";
-import type { Product, Lang, Category } from "../../types";
+import type { Product, Lang, Category, Brand } from "../../types";
 import { AdminDashboard } from "./AdminDashboard";
 import { AdminProductsPanel } from "./AdminProductsPanel";
 import { AdminCategoriesPanel } from "./AdminCategoriesPanel";
+import { AdminBrandsPanel } from "./AdminBrandsPanel";
 import { AdminOrdersPanel } from "./AdminOrdersPanel";
 
 interface AdminLayoutProps {
   lang: Lang;
   products: Product[];
   categories: Category[];
+  brands: Brand[];
   categoriesLoading: boolean;
   categoriesError: string | null;
+  brandsLoading: boolean;
+  brandsError: string | null;
 }
 
 export const AdminLayout = ({
   lang,
   products,
   categories,
+  brands,
   categoriesLoading,
   categoriesError,
+  brandsLoading,
+  brandsError,
 }: AdminLayoutProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navItems = [
     { path: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/admin/products", label: "Products", icon: Package },
     { path: "/admin/categories", label: "Categories", icon: Tag },
+    { path: "/admin/brands", label: "Brands", icon: Award },
     { path: "/admin/orders", label: "Orders", icon: ClipboardList },
   ];
 
@@ -48,7 +57,7 @@ export const AdminLayout = ({
             Admin Panel
           </p>
           <p className="text-base font-semibold text-slate-900">
-            Yamin Collection
+            TWIN Collection
           </p>
         </div>
       </div>
@@ -97,11 +106,11 @@ export const AdminLayout = ({
   );
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-8">
-        <div className="flex flex-col gap-6 md:flex-row">
+        <div className="flex flex-col gap-8 md:flex-row">
           <aside className="hidden md:block md:w-72 md:sticky md:top-8 self-start">
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+            <div className="rounded-3xl border border-slate-200/60 bg-white/80 backdrop-blur-xl shadow-xl shadow-slate-200/40 p-6">
               {sidebarInner}
             </div>
           </aside>
@@ -140,7 +149,7 @@ export const AdminLayout = ({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 md:p-8">
+            <div className="rounded-3xl border border-slate-200/60 bg-white/80 backdrop-blur-xl shadow-xl shadow-slate-200/40 p-6 md:p-10">
               <Routes>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route
@@ -155,6 +164,7 @@ export const AdminLayout = ({
                     <AdminProductsPanel
                       products={products}
                       categories={categories}
+                      brands={brands}
                       lang={lang}
                       categoriesLoading={categoriesLoading}
                       categoriesError={categoriesError}
@@ -164,6 +174,16 @@ export const AdminLayout = ({
                 <Route
                   path="categories"
                   element={<AdminCategoriesPanel categories={categories} />}
+                />
+                <Route
+                  path="brands"
+                  element={
+                    <AdminBrandsPanel
+                      brands={brands}
+                      isLoading={brandsLoading}
+                      error={brandsError}
+                    />
+                  }
                 />
                 <Route path="orders" element={<AdminOrdersPanel lang={lang} />} />
               </Routes>

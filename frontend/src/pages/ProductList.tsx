@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { useGetProductsQuery, useGetCategoriesQuery, useLoginMutation } from "../lib/api";
+import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery, useLoginMutation } from "../lib/api";
 import { useTranslation } from "react-i18next";
 import i18n from "../lib/i18n";
 import {
@@ -8,8 +8,9 @@ import {
   useLocation,
   useNavigate,
   useParams,
+  useSearchParams,
 } from "react-router-dom";
-import { Menu, Plus, Search, ShoppingBag, X } from "lucide-react";
+import { ShoppingBag, X, ArrowLeft } from "lucide-react";
 
 import { TOKEN_KEY } from "../constants.ts";
 import type {
@@ -18,14 +19,14 @@ import type {
   CategoryFilter,
   ForFilter,
 } from "../types";
-import { CATEGORIES, FOR_FILTERS } from "../types";
 import { matchesCategoryFilter } from "../utils/helpers";
 
-import { LanguageToggle } from "../components/common/LanguageToggle";
+
 import { ShopView } from "../components/shop/ShopView";
 import { ProductDetail } from "../components/shop/ProductDetail";
 import { AdminGate } from "../components/admin/AdminGate";
 import { AdminLayout } from "../components/admin/AdminLayout";
+import { HomeView } from "../components/shop/HomeView";
 
 const ProductDetailRoute = ({
   products,
@@ -70,9 +71,10 @@ const ProductDetailRoute = ({
 
   return (
     <ProductDetail
-      product={product}
+      productId={id!}
       lang={lang}
-      onClose={() => navigate("/")}
+      onClose={() => navigate(-1)}
+      isPage={true}
     />
   );
 };
@@ -82,12 +84,6 @@ export const ProductList = () => {
   const [lang, setLang] = useState<Lang>(() =>
     i18n.language === "mm" ? "mm" : "en",
   );
-  const {
-    data: products = [],
-    isLoading: isLoadingProducts,
-    error: productErrorData
-  } = useGetProductsQuery();
-  const productError = productErrorData ? "Unable to load products." : null;
 
   const {
     data: categoryOptions = [],
@@ -96,19 +92,34 @@ export const ProductList = () => {
   } = useGetCategoriesQuery();
   const categoryFetchError = categoryFetchErrorData ? "Unable to load categories" : null;
 
+  const {
+    data: brands = [],
+    isLoading: isFetchingBrands,
+    error: brandsFetchErrorData
+  } = useGetBrandsQuery();
+  const brandsFetchError = brandsFetchErrorData ? "Unable to load brands" : null;
+
   const [category, setCategory] = useState<CategoryFilter>("All");
   const [forFilter, setForFilter] = useState<ForFilter>("All");
-  const [scrolled, setScrolled] = useState(false);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [login] = useLoginMutation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showSaleOnly, setShowSaleOnly] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isAdminView = location.pathname.startsWith("/admin");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeBrandFilter = searchParams.get("brand");
+
+  const {
+    data: products = [],
+    isLoading: isLoadingProducts,
+    error: productErrorData
+  } = useGetProductsQuery(isAdminView ? undefined : (activeBrandFilter || undefined));
+  const productError = productErrorData ? "Unable to load products." : null;
 
   const persistToken = useCallback(
     (token: string, expiresInSeconds: number) => {
@@ -129,13 +140,6 @@ export const ProductList = () => {
     setLoginError(null);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem(TOKEN_KEY);
-    setAuthToken(null);
-    if (isAdminView) {
-      navigate("/");
-    }
-  };
 
   useEffect(() => {
     const raw = localStorage.getItem(TOKEN_KEY);
@@ -163,11 +167,7 @@ export const ProductList = () => {
     i18n.changeLanguage(lang);
   }, [lang]);
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
 
   // Removed old manual fetching functions
 
@@ -211,9 +211,17 @@ export const ProductList = () => {
         forFilter === "All" ||
         audienceValue === forFilter.toLowerCase() ||
         audienceValue === "all";
-      return catMatch && forMatch;
+
+      const brandMatch =
+        !activeBrandFilter ||
+        product.brandId === activeBrandFilter ||
+        product.brand?.id === activeBrandFilter;
+
+      const saleMatch = !showSaleOnly || product.isSale || (product.price < (product.originalPrice ?? 0));
+
+      return catMatch && forMatch && brandMatch && saleMatch;
     });
-  }, [category, forFilter, products]);
+  }, [category, forFilter, products, activeBrandFilter, showSaleOnly]);
 
 
 
@@ -221,92 +229,119 @@ export const ProductList = () => {
     navigate(`/product/${productId}`);
   };
 
+  const handleBrandSelect = (brandId: string) => {
+    setSearchParams({ brand: brandId });
+    setCategory("All");
+    setForFilter("All");
+    if (location.pathname !== "/shop") {
+      navigate(`/shop?brand=${brandId}`);
+    }
+    window.scrollTo(0, 0);
+  };
+
+  const activeBrandName = useMemo(() => {
+    if (!activeBrandFilter) return null;
+    const brand = brands.find(b => b.id === activeBrandFilter);
+    return brand ? brand.name : null;
+  }, [activeBrandFilter, brands]);
+
   return (
     <div className="min-h-screen bg-white selection:bg-pink-100 selection:text-pink-900">
-      <nav
-        className={`fixed top-0 inset-x-0 z-[100] transition-all duration-500 ${
-          scrolled || isAdminView
-            ? "bg-white/90 backdrop-blur-md py-4 shadow-sm"
-            : "bg-transparent py-8"
-        }`}
-      >
-        <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 grid grid-cols-3 items-center">
-          <div className="flex items-center gap-6 justify-self-start">
-            <button
-              className="lg:hidden text-slate-900"
-              onClick={() => setIsMobileMenuOpen(true)}
-            >
-              <Menu size={20} />
-            </button>
-            <Search
-              size={18}
-              className="hidden lg:block text-slate-900 cursor-pointer hover:text-pink-600 transition-colors"
-            />
-            <button
-              onClick={handleAdminNavigation}
-              className="hidden lg:flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-slate-400 hover:text-slate-900 transition-colors border-l pl-6 border-slate-100"
-            >
-              {isAdminView ? (
-                <>
-                  <ShoppingBag size={14} /> {t("shop")}
-                </>
-              ) : (
-                <>
-                  <Plus size={14} /> {t("admin")}
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="flex flex-col items-center justify-self-center">
-            <h1 className="text-xl lg:text-3xl tracking-[0.5em] font-bold text-slate-900 uppercase whitespace-nowrap">
-              Yamin BKK
-            </h1>
-            <p className="text-[8px] tracking-[0.4em] uppercase text-slate-400 font-medium mt-1 whitespace-nowrap">
-              {t("collections")}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 lg:gap-8 justify-self-end">
-            <LanguageToggle
-              current={lang}
-              onToggle={() =>
-                setLang((current) => (current === "en" ? "mm" : "en"))
-              }
-            />
-            {authToken ? (
+      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            {location.pathname !== "/" && (
               <button
-                onClick={handleLogout}
-                className="hidden lg:inline-flex text-[10px] uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900"
+                onClick={() => navigate("/")}
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors flex items-center text-slate-600"
               >
-                {t("logout")}
-              </button>
-            ) : (
-              <button
-                onClick={openLoginModal}
-                className="hidden lg:inline-flex text-[10px] uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900"
-              >
-                {t("login")}
+                <ArrowLeft size={20} />
+                <span className="ml-2 hidden sm:inline text-sm font-medium">
+                  {t("back")}
+                </span>
               </button>
             )}
+            <h1
+              onClick={() => {
+                setSearchParams({});
+                navigate("/");
+              }}
+              className="text-xl font-bold tracking-tighter cursor-pointer text-slate-900 flex items-center"
+            >
+              TWIN BKK
+              <span className="text-slate-400 font-light ml-1 hidden sm:inline">
+                Collection
+              </span>
+            </h1>
+          </div>
+
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            {/* Language Switcher */}
+            <div className="flex items-center bg-slate-100 rounded-full p-1 border border-slate-200">
+              <button
+                onClick={() => setLang("mm")}
+                className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-200 ${
+                  lang === "mm"
+                    ? "bg-white shadow-sm text-pink-500"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                MM
+              </button>
+              <button
+                onClick={() => setLang("en")}
+                className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-200 ${
+                  lang === "en"
+                    ? "bg-white shadow-sm text-pink-500"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                EN
+              </button>
+            </div>
+
+            <button
+              onClick={handleAdminNavigation}
+              className="p-2 hover:bg-slate-100 rounded-full relative"
+              title={isAdminView ? "Back to Shop" : "Admin Panel"}
+            >
+              {isAdminView ? (
+                <ShoppingBag size={20} className="text-pink-500" />
+              ) : (
+                <ShoppingBag size={20} className="text-slate-700" />
+              )}
+              {!isAdminView && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-pink-500 rounded-full"></span>
+              )}
+            </button>
           </div>
         </div>
       </nav>
 
-      <div className="h-32 lg:h-48"></div>
+      <div className="h-0"></div>
 
       <Routes>
         <Route
           path="/"
           element={
+            <HomeView
+              onBrandSelect={handleBrandSelect}
+            />
+          }
+        />
+        <Route
+          path="/shop"
+          element={
             <ShopView
               lang={lang}
-              category={category}
               forFilter={forFilter}
+              showSaleOnly={showSaleOnly}
               filteredProducts={filteredProducts}
               onCategoryChange={setCategory}
               onForChange={setForFilter}
+              onToggleSale={() => setShowSaleOnly(!showSaleOnly)}
               onViewDetails={handleViewDetails}
+              activeBrandName={activeBrandName}
               isLoading={isLoadingProducts}
               error={productError}
             />
@@ -320,8 +355,11 @@ export const ProductList = () => {
                 lang={lang}
                 products={products}
                 categories={categoryOptions}
+                brands={brands}
                 categoriesLoading={isFetchingCategories}
                 categoriesError={categoryFetchError}
+                brandsLoading={isFetchingBrands}
+                brandsError={brandsFetchError}
               />
             </AdminGate>
           }
@@ -339,131 +377,18 @@ export const ProductList = () => {
         <Route
           path="*"
           element={
-            <ShopView
-              lang={lang}
-              category={category}
-              forFilter={forFilter}
-              filteredProducts={filteredProducts}
-              onCategoryChange={setCategory}
-              onForChange={setForFilter}
-              onViewDetails={handleViewDetails}
-              isLoading={isLoadingProducts}
-              error={productError}
+            <HomeView
+              onBrandSelect={handleBrandSelect}
             />
           }
         />
       </Routes>
 
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[200] lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <div className="absolute top-0 left-0 bottom-0 w-4/5 max-w-sm bg-white shadow-2xl flex flex-col pt-8 pb-12 px-6 animate-in slide-in-from-left duration-300">
-            <div className="flex justify-between items-center mb-12">
-              <div className="flex flex-col">
-                <h2 className="text-xl tracking-[0.5em] font-bold text-slate-900 uppercase">
-                  Yamin BKK
-                </h2>
-                <p className="text-[8px] tracking-[0.4em] uppercase text-slate-400 font-medium mt-1">
-                  {t("collections")}
-                </p>
-              </div>
-              <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 -mr-2 text-slate-400 hover:text-slate-900 transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="flex-1 space-y-8 overflow-y-auto">
-              <div className="space-y-4">
-                <p className="text-[10px] tracking-[0.3em] font-bold text-pink-500 uppercase">
-                  {t("categories")}
-                </p>
-                <ul className="space-y-4">
-                  <li
-                    className="text-sm font-medium tracking-wide uppercase text-slate-600 hover:text-pink-600 cursor-pointer transition-colors"
-                    onClick={() => {
-                      setCategory("All");
-                      setIsMobileMenuOpen(false);
-                      navigate("/");
-                    }}
-                  >
-                    {t("category.all")}
-                  </li>
-                  {CATEGORIES.filter((c) => c !== "All").map((c) => (
-                    <li
-                      key={c}
-                      className="text-sm font-medium tracking-wide uppercase text-slate-600 hover:text-pink-600 cursor-pointer transition-colors"
-                      onClick={() => {
-                        setCategory(c);
-                        setIsMobileMenuOpen(false);
-                        navigate("/");
-                      }}
-                    >
-                      {t(`category.${c.toLowerCase()}`)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="pt-8 border-t border-slate-100 space-y-4">
-                <p className="text-[10px] tracking-[0.3em] font-bold text-pink-500 uppercase">
-                  {t("gender")}
-                </p>
-                <ul className="space-y-4">
-                  {FOR_FILTERS.map((f) => (
-                    <li
-                      key={f.value}
-                      className="text-sm font-medium tracking-wide uppercase text-slate-600 hover:text-pink-600 cursor-pointer transition-colors"
-                      onClick={() => {
-                        setForFilter(f.value);
-                        setIsMobileMenuOpen(false);
-                        navigate("/");
-                      }}
-                    >
-                      {t(`gender.${f.value.toLowerCase()}`)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-100 pt-8 mt-auto space-y-4">
-              {authToken ? (
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full py-3 bg-slate-100 text-slate-900 rounded-full text-xs font-bold tracking-widest uppercase hover:bg-slate-200"
-                >
-                  {t("logout")}
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    openLoginModal();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full py-3 bg-slate-900 text-white rounded-full text-xs font-bold tracking-widest uppercase hover:bg-slate-800"
-                >
-                  {t("adminLogin")}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       <footer className="bg-slate-50 py-24 px-6 border-t border-slate-100">
         <div className="max-w-screen-2xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16 border-t border-slate-200 pt-16">
           <div className="space-y-6">
             <h4 className="text-xs font-bold tracking-[0.4em] uppercase">
-              Yamin BKK
+              TWIN BKK
             </h4>
             <p className="text-xs text-slate-500 leading-relaxed max-w-xs">
               {t("footerDescription")}
