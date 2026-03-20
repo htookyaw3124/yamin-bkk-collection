@@ -21,7 +21,12 @@ export class ProductService {
   ) {
     const { variants: _variants, ...productPayload } = createProductDto;
     let variants: any[] = _variants || [];
-    console.log('Service Create DTO - Raw variants:', _variants, 'Type:', typeof _variants);
+    console.log(
+      'Service Create DTO - Raw variants:',
+      _variants,
+      'Type:',
+      typeof _variants,
+    );
 
     // Parse variants if they come as a JSON string
     if (typeof _variants === 'string') {
@@ -44,9 +49,8 @@ export class ProductService {
     }
 
     // Filter out empty or invalid variants
-    variants = variants.filter(v => 
-      v && typeof v === 'object' && 
-      v.sku && v.name_en && v.name_mm
+    variants = variants.filter(
+      (v) => v && typeof v === 'object' && v.sku && v.name_en && v.name_mm,
     );
 
     console.log('Normalized variants:', variants);
@@ -88,15 +92,15 @@ export class ProductService {
     const productImages = [];
     let mainAssigned = false;
     for (let i = 0; i < uploadResults.length; i++) {
-        if (!allMappedIndices.has(i)) {
-            let result = uploadResults[i] as any;
-            productImages.push({
-                url: result.secure_url,
-                publicId: result.public_id,
-                isMain: !mainAssigned,
-            });
-            mainAssigned = true;
-        }
+      if (!allMappedIndices.has(i)) {
+        const result = uploadResults[i] as any;
+        productImages.push({
+          url: result.secure_url,
+          publicId: result.public_id,
+          isMain: !mainAssigned,
+        });
+        mainAssigned = true;
+      }
     }
 
     const normalizedStock = Number(productPayload.stock ?? 0);
@@ -190,7 +194,7 @@ export class ProductService {
         OR: [
           { name_en: { search: ftsQuery } },
           { category: { name_en: { search: ftsQuery } } },
-          
+
           { name_mm: { contains: search } },
           { category: { name_mm: { contains: search } } },
         ],
@@ -246,7 +250,7 @@ export class ProductService {
   ) {
     console.log('Service Update DTO:', updateProductDto);
     updateProductDto = updateProductDto || ({} as any);
-    let {
+    const {
       categoryId,
       price,
       stock,
@@ -314,7 +318,8 @@ export class ProductService {
     const normalizedStock =
       stock === undefined || stock === null ? undefined : Number(stock);
 
-    const productImages: { url: string; publicId: string; isMain: boolean }[] = [];
+    const productImages: { url: string; publicId: string; isMain: boolean }[] =
+      [];
     for (let i = 0; i < uploadResults.length; i++) {
       if (!allMappedIndices.has(i)) {
         const result = uploadResults[i] as any;
@@ -354,7 +359,9 @@ export class ProductService {
             .filter((v) => v.id)
             .map((v) => v.id as string);
 
-          const idsToDelete = currentIds.filter((id) => !incomingIds.includes(id));
+          const idsToDelete = currentIds.filter(
+            (id) => !incomingIds.includes(id),
+          );
 
           // Delete variants not in incoming list
           if (idsToDelete.length > 0) {

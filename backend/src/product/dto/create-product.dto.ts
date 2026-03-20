@@ -41,13 +41,17 @@ export class CreateVariantDto {
   name_mm: string;
 
   @IsOptional()
-  @Transform(({ value }) =>
-    value === undefined || value === '' ? undefined : parseFloat(value),
+  @Transform(({ value }: { value: unknown }) =>
+    value === undefined || value === ''
+      ? undefined
+      : parseFloat(value as string),
   )
   @IsNumber({}, { message: 'priceOverride must be a number' })
   priceOverride?: number;
 
-  @Transform(({ value }) => parseInt(value ?? '0', 10))
+  @Transform(({ value }: { value: unknown }) =>
+    parseInt((value as string) ?? '0', 10),
+  )
   @IsNumber()
   stock: number;
 
@@ -75,11 +79,13 @@ export class CreateProductDto {
   @IsOptional()
   description_mm?: string;
 
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }: { value: unknown }) => parseFloat(value as string))
   @IsNumber()
   price: number;
 
-  @Transform(({ value }) => parseInt(value ?? '0', 10))
+  @Transform(({ value }: { value: unknown }) =>
+    parseInt((value as string) ?? '0', 10),
+  )
   @IsNumber()
   stock: number;
 
@@ -95,7 +101,10 @@ export class CreateProductDto {
   @IsOptional()
   brandId?: string;
 
-  @Transform(({ value }) => (value === '' ? undefined : value))
+  @Transform(
+    ({ value }: { value: unknown }) =>
+      (value === '' ? undefined : value) as string | undefined,
+  )
   @ValidateIf(
     (_obj, value) => value !== undefined && value !== null && value !== '',
   )
@@ -103,15 +112,15 @@ export class CreateProductDto {
   @IsOptional()
   videoUrl?: string;
 
-  @Transform(({ value }) => {
+  @Transform(({ value }: { value: unknown }) => {
     if (typeof value === 'string') {
       try {
-        return JSON.parse(value);
+        return JSON.parse(value) as CreateVariantDto[];
       } catch {
-        return [];
+        return [] as CreateVariantDto[];
       }
     }
-    return value || [];
+    return (value || []) as CreateVariantDto[];
   })
   @IsArray()
   @IsOptional()
@@ -122,15 +131,15 @@ export class CreateProductDto {
   variantImageMap?: string;
 
   @IsOptional()
-  @Transform(({ value }) => {
+  @Transform(({ value }: { value: unknown }) => {
     if (typeof value === 'string' && value.trim().length) {
       try {
-        return JSON.parse(value);
-      } catch (error) {
-        return [];
+        return JSON.parse(value) as unknown[];
+      } catch {
+        return [] as unknown[];
       }
     }
-    return value;
+    return (value || []) as unknown[];
   })
-  variantGroups?: any;
+  variantGroups?: unknown[];
 }
