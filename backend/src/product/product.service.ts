@@ -337,10 +337,18 @@ export class ProductService {
         const updatedProduct = await tx.product.update({
           where: { id },
           data: {
-            ...rest,
+            name_en: rest.name_en,
+            name_mm: rest.name_mm,
+            description_en: rest.description_en,
+            description_mm: rest.description_mm,
+            audience: rest.audience,
+            videoUrl: rest.videoUrl,
+            variantGroups: rest.variantGroups as any,
             price: Number.isNaN(normalizedPrice) ? undefined : normalizedPrice,
             stock: Number.isNaN(normalizedStock) ? undefined : normalizedStock,
-            categoryId: resolvedCategoryId,
+            category: resolvedCategoryId
+              ? { connect: { id: resolvedCategoryId } }
+              : undefined,
             images: productImages.length
               ? { create: productImages }
               : undefined,
