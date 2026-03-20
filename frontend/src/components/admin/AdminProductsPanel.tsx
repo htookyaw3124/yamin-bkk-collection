@@ -49,6 +49,7 @@ export const AdminProductsPanel = ({
     description_mm: "",
     price: "",
     stock: "",
+    brand: "",
     categoryId: "",
     audience: "all" as Audience,
     videoUrl: "",
@@ -78,6 +79,7 @@ export const AdminProductsPanel = ({
       description_mm: editingProduct.description_mm ?? "",
       price: editingProduct.price?.toString() ?? "",
       stock: editingProduct.stock?.toString() ?? "0",
+      brand: typeof editingProduct.brand === 'string' ? editingProduct.brand : editingProduct.brand?.name ?? "",
       categoryId,
       audience: editingProduct.audience ?? "all",
       videoUrl: editingProduct.videoUrl ?? "",
@@ -284,6 +286,7 @@ export const AdminProductsPanel = ({
         description_mm: editForm.description_mm,
         price: editForm.price,
         stock: editForm.stock,
+        brand: editForm.brand,
         categoryId: editForm.categoryId,
         audience: editForm.audience,
         videoUrl: editForm.videoUrl,
@@ -563,6 +566,15 @@ export const AdminProductsPanel = ({
               value={editForm.stock}
               onChange={(event) =>
                 setEditForm({ ...editForm, stock: event.target.value })
+              }
+            />
+            <input
+              type="text"
+              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+              placeholder="Brand"
+              value={editForm.brand}
+              onChange={(event) =>
+                setEditForm({ ...editForm, brand: event.target.value })
               }
             />
             <select

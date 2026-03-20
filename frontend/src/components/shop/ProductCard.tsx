@@ -129,7 +129,7 @@ export const ProductCard = ({
           </p>
         )}
         <p className="text-slate-900 font-medium text-sm mt-1">
-          {product.price.toLocaleString()} USD
+          {product.price.toLocaleString()} MMK
         </p>
       </div>
     </div>

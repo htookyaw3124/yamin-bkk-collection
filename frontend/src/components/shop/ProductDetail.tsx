@@ -127,7 +127,7 @@ export const ProductDetail = ({
                 {name}
               </h1>
               <p className="text-2xl font-medium text-slate-900">
-                {activePrice.toLocaleString()} USD
+                {activePrice.toLocaleString()} MMK
               </p>
             </header>
 

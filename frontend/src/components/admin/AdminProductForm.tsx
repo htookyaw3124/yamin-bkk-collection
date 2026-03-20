@@ -300,6 +300,9 @@ export const AdminProductForm = ({
         Number.isNaN(normalizedStock) ? "0" : normalizedStock.toString(),
       );
       formPayload.append("categoryId", normalizedCategoryId);
+      if (formData.brand.trim()) {
+        formPayload.append("brand", formData.brand.trim());
+      }
       formPayload.append("audience", normalizedAudience);
       formPayload.append(
         "variantGroups",
@@ -461,7 +464,7 @@ export const AdminProductForm = ({
                 Pricing
               </h4>
               <div>
-                <label className={labelBase}>Price (USD)</label>
+                <label className={labelBase}>Price (MMK)</label>
                 <input
                   required
                   type="number"
