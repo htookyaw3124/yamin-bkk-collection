@@ -19,7 +19,13 @@ export class ProductService {
     createProductDto: CreateProductDto,
     files: Express.Multer.File[] = [],
   ) {
-    const { variants: _variants, ...productPayload } = createProductDto;
+    const { variants: _variants, ...tempPayload } = createProductDto as any;
+    // Strip non-schema fields
+    delete tempPayload.variantImageMap;
+    delete tempPayload.optionImageMap;
+    delete tempPayload.imageUrl;
+    
+    const productPayload = tempPayload;
     const variants = this.parseVariantsPayload(_variants);
     console.log('Normalized variants:', variants);
 
@@ -67,15 +73,34 @@ export class ProductService {
     const normalizedPrice = Number(productPayload.price ?? 0);
     const normalizedAudience = productPayload.audience ?? 'all';
 
-    const { variantImageMap: _, ...cleanPayload } = productPayload as any;
+    const cleanPayload = { ...productPayload };
+    delete cleanPayload.variantImageMap;
+    delete cleanPayload.optionImageMap;
+    delete cleanPayload.imageUrl;
+
+    const prismaCreateData = {
+      name_en: cleanPayload.name_en,
+      name_mm: cleanPayload.name_mm,
+      description_en: cleanPayload.description_en,
+      description_mm: cleanPayload.description_mm,
+      price: normalizedPrice,
+      stock: normalizedStock,
+      audience: normalizedAudience,
+      videoUrl: cleanPayload.videoUrl,
+      variantGroups: cleanPayload.variantGroups as any,
+      categoryId: category.id,
+      brandId: cleanPayload.brandId || null,
+    };
+
+    console.log('Prisma Create Data Summary:', {
+      name: prismaCreateData.name_en,
+      variantsCount: variants.length,
+      imagesCount: productImages.length
+    });
 
     const createdProduct = await this.prisma.product.create({
       data: {
-        ...cleanPayload,
-        price: normalizedPrice,
-        stock: normalizedStock,
-        audience: normalizedAudience,
-        categoryId: category.id,
+        ...prismaCreateData,
         images: productImages.length ? { create: productImages } : undefined,
         variants: variants.length
           ? {
@@ -299,14 +324,14 @@ export class ProductService {
             stock: Number.isNaN(normalizedStock) ? undefined : normalizedStock,
             brand: rest.brandId
               ? { connect: { id: rest.brandId } }
-              : undefined,
+              : { disconnect: true }, // allow unsetting brand
             category: resolvedCategoryId
               ? { connect: { id: resolvedCategoryId } }
               : undefined,
             images: productImages.length
               ? { create: productImages }
               : undefined,
-          } as any,
+          },
         });
 
         if (variants.length > 0) {
