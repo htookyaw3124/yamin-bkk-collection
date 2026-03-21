@@ -73,11 +73,15 @@ export class UpdateProductDto {
   videoUrl?: string;
 
   @IsOptional()
-  variants?: any;
+  variants?: unknown[];
 
   @IsString()
   @IsOptional()
   variantImageMap?: string;
+
+  @IsString()
+  @IsOptional()
+  optionImageMap?: string;
 
   @IsOptional()
   @Transform(({ value }: { value: unknown }) => {

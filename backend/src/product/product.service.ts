@@ -4,9 +4,33 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { UploadApiResponse } from 'cloudinary';
+
+interface ParsedOption {
+  type: string;
+  value_en: string;
+  value_mm: string;
+  color?: string;
+  imageUrl?: string;
+}
+
+interface ParsedVariant {
+  id?: string;
+  sku: string;
+  name_en: string;
+  name_mm: string;
+  priceOverride?: number;
+  stock: number;
+  options?: ParsedOption[];
+}
+
+type ProductWithVariants = Prisma.ProductGetPayload<{
+  include: { variants: true };
+}>;
 
 @Injectable()
 export class ProductService {
@@ -19,13 +43,8 @@ export class ProductService {
     createProductDto: CreateProductDto,
     files: Express.Multer.File[] = [],
   ) {
-    const { variants: _variants, ...tempPayload } = createProductDto as any;
-    // Strip non-schema fields
-    delete tempPayload.variantImageMap;
-    delete tempPayload.optionImageMap;
-    delete tempPayload.imageUrl;
-    
-    const productPayload = tempPayload;
+    const { variants: _variants, ...productPayload } = createProductDto;
+
     const variants = this.parseVariantsPayload(_variants);
     console.log('Normalized variants:', variants);
 
@@ -48,18 +67,22 @@ export class ProductService {
         )
       : [];
 
-    const parsedVariantMap = this.parseVariantImageMap(productPayload.variantImageMap);
-    const parsedOptionMap = this.parseVariantImageMap((productPayload as any).optionImageMap);
+    const parsedVariantMap = this.parseVariantImageMap(
+      productPayload.variantImageMap,
+    );
+    const parsedOptionMap = this.parseVariantImageMap(
+      productPayload.optionImageMap,
+    );
     const allMappedIndices = this.getMappedImageIndices(parsedVariantMap);
     const allMappedOptionIndices = this.getMappedImageIndices(parsedOptionMap);
-    allMappedOptionIndices.forEach(i => allMappedIndices.add(i));
+    allMappedOptionIndices.forEach((i) => allMappedIndices.add(i));
 
     // productImages are those not mapped to any variant
     const productImages = [];
     let mainAssigned = false;
     for (let i = 0; i < uploadResults.length; i++) {
       if (!allMappedIndices.has(i)) {
-        const result = uploadResults[i] as any;
+        const result = uploadResults[i] as UploadApiResponse;
         productImages.push({
           url: result.secure_url,
           publicId: result.public_id,
@@ -74,9 +97,7 @@ export class ProductService {
     const normalizedAudience = productPayload.audience ?? 'all';
 
     const cleanPayload = { ...productPayload };
-    delete cleanPayload.variantImageMap;
-    delete cleanPayload.optionImageMap;
-    delete cleanPayload.imageUrl;
+    // imageUrl is handled via destructuring or simply ignored if not in DTO
 
     const prismaCreateData = {
       name_en: cleanPayload.name_en,
@@ -87,7 +108,7 @@ export class ProductService {
       stock: normalizedStock,
       audience: normalizedAudience,
       videoUrl: cleanPayload.videoUrl,
-      variantGroups: cleanPayload.variantGroups as any,
+      variantGroups: cleanPayload.variantGroups as Prisma.InputJsonValue,
       categoryId: category.id,
       brandId: cleanPayload.brandId || null,
     };
@@ -95,10 +116,10 @@ export class ProductService {
     console.log('Prisma Create Data Summary:', {
       name: prismaCreateData.name_en,
       variantsCount: variants.length,
-      imagesCount: productImages.length
+      imagesCount: productImages.length,
     });
 
-    const createdProduct = await this.prisma.product.create({
+    const createdProduct = (await this.prisma.product.create({
       data: {
         ...prismaCreateData,
         images: productImages.length ? { create: productImages } : undefined,
@@ -112,20 +133,31 @@ export class ProductService {
                 stock: Number(variant.stock ?? 0),
                 options: variant.options?.length
                   ? {
-                      create: variant.options.map((option: any, optIndex: number) => {
-                        let mappedUrl = option.imageUrl;
-                        const optImgIndices = parsedOptionMap[`${index}-${optIndex}`];
-                        if (optImgIndices && optImgIndices.length > 0 && uploadResults[optImgIndices[0]]) {
-                          mappedUrl = (uploadResults[optImgIndices[0]] as any).secure_url;
-                        }
-                        return {
-                          type: option.type,
-                          value_en: option.value_en,
-                          value_mm: option.value_mm,
-                          color: option.color,
-                          imageUrl: mappedUrl,
-                        };
-                      }),
+                      create: variant.options.map(
+                        (option: ParsedOption, optIndex: number) => {
+                          let mappedUrl = option.imageUrl;
+                          const optImgIndices =
+                            parsedOptionMap[`${index}-${optIndex}`];
+                          if (
+                            optImgIndices &&
+                            optImgIndices.length > 0 &&
+                            uploadResults[optImgIndices[0]]
+                          ) {
+                            mappedUrl = (
+                              uploadResults[
+                                optImgIndices[0]
+                              ] as UploadApiResponse
+                            ).secure_url;
+                          }
+                          return {
+                            type: option.type,
+                            value_en: option.value_en,
+                            value_mm: option.value_mm,
+                            color: option.color,
+                            imageUrl: mappedUrl,
+                          };
+                        },
+                      ),
                     }
                   : undefined,
               })),
@@ -135,14 +167,20 @@ export class ProductService {
       include: {
         variants: true,
       },
-    });
+    })) as ProductWithVariants;
 
-    const variantImagesToCreate: any[] = [];
+    const variantImagesToCreate: {
+      url: string;
+      publicId: string;
+      isMain: boolean;
+      productId: string;
+      variantId: string;
+    }[] = [];
     if (Object.keys(parsedVariantMap).length > 0 && createdProduct.variants) {
-      createdProduct.variants.forEach((v: any, index: number) => {
+      createdProduct.variants.forEach((v, index: number) => {
         const imgIndices = parsedVariantMap[index.toString()] || [];
         imgIndices.forEach((imgIdx: number) => {
-          const result = uploadResults[imgIdx] as any;
+          const result = uploadResults[imgIdx] as UploadApiResponse;
           if (result) {
             variantImagesToCreate.push({
               url: result.secure_url,
@@ -179,7 +217,7 @@ export class ProductService {
   }
 
   async findAll(search?: string, brandId?: string) {
-    let whereCondition: any = {};
+    let whereCondition: Prisma.ProductWhereInput = {};
 
     if (brandId) {
       whereCondition.brandId = brandId;
@@ -195,6 +233,9 @@ export class ProductService {
 
           { name_mm: { contains: search } },
           { category: { name_mm: { contains: search } } },
+          { description_en: { contains: search } },
+          { description_mm: { contains: search } },
+          { brand: { name: { search: search } } },
         ],
       };
     }
@@ -243,11 +284,10 @@ export class ProductService {
 
   async update(
     id: string,
-    updateProductDto: UpdateProductDto = {} as any,
+    updateProductDto: UpdateProductDto = {},
     files: Express.Multer.File[] = [],
   ) {
     console.log('Service Update DTO:', updateProductDto);
-    updateProductDto = updateProductDto || ({} as any);
     const {
       categoryId,
       price,
@@ -256,7 +296,7 @@ export class ProductService {
       variantImageMap,
       optionImageMap,
       ...rest
-    } = updateProductDto as any;
+    } = updateProductDto;
 
     // Handle variants parsing (similar to create)
     const variants = this.parseVariantsPayload(_variants);
@@ -287,7 +327,7 @@ export class ProductService {
     const parsedOptionMap = this.parseVariantImageMap(optionImageMap);
     const allMappedIndices = this.getMappedImageIndices(parsedVariantMap);
     const allMappedOptionIndices = this.getMappedImageIndices(parsedOptionMap);
-    allMappedOptionIndices.forEach(i => allMappedIndices.add(i));
+    allMappedOptionIndices.forEach((i) => allMappedIndices.add(i));
 
     const normalizedPrice =
       price === undefined || price === null ? undefined : Number(price);
@@ -298,7 +338,7 @@ export class ProductService {
       [];
     for (let i = 0; i < uploadResults.length; i++) {
       if (!allMappedIndices.has(i)) {
-        const result = uploadResults[i] as any;
+        const result = uploadResults[i] as UploadApiResponse;
         productImages.push({
           url: result.secure_url,
           publicId: result.public_id,
@@ -310,7 +350,7 @@ export class ProductService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         // Update product basic info
-        const updatedProduct = await tx.product.update({
+        await tx.product.update({
           where: { id },
           data: {
             name_en: rest.name_en,
@@ -319,7 +359,7 @@ export class ProductService {
             description_mm: rest.description_mm,
             audience: rest.audience,
             videoUrl: rest.videoUrl,
-            variantGroups: rest.variantGroups as any,
+            variantGroups: rest.variantGroups as Prisma.InputJsonValue,
             price: Number.isNaN(normalizedPrice) ? undefined : normalizedPrice,
             stock: Number.isNaN(normalizedStock) ? undefined : normalizedStock,
             brand: rest.brandId
@@ -384,22 +424,32 @@ export class ProductService {
                   where: { variantId },
                 });
                 if (v.options.length > 0) {
+                  const finalVariantId: string = variantId;
                   await tx.variantOption.createMany({
-                    data: v.options.map((opt: any, optIndex: number) => {
-                      let mappedUrl = opt.imageUrl;
-                      const optImgIndices = parsedOptionMap[`${index}-${optIndex}`];
-                      if (optImgIndices && optImgIndices.length > 0 && uploadResults[optImgIndices[0]]) {
-                        mappedUrl = (uploadResults[optImgIndices[0]] as any).secure_url;
-                      }
-                      return {
-                        type: opt.type,
-                        value_en: opt.value_en,
-                        value_mm: opt.value_mm,
-                        color: opt.color,
-                        imageUrl: mappedUrl,
-                        variantId,
-                      };
-                    }),
+                    data: v.options.map(
+                      (opt: ParsedOption, optIndex: number) => {
+                        let mappedUrl = opt.imageUrl;
+                        const optImgIndices =
+                          parsedOptionMap[`${index}-${optIndex}`];
+                        if (
+                          optImgIndices &&
+                          optImgIndices.length > 0 &&
+                          uploadResults[optImgIndices[0]]
+                        ) {
+                          mappedUrl = (
+                            uploadResults[optImgIndices[0]] as UploadApiResponse
+                          ).secure_url;
+                        }
+                        return {
+                          type: opt.type,
+                          value_en: opt.value_en,
+                          value_mm: opt.value_mm,
+                          color: opt.color,
+                          imageUrl: mappedUrl,
+                          variantId: finalVariantId,
+                        };
+                      },
+                    ),
                   });
                 }
               }
@@ -410,20 +460,31 @@ export class ProductService {
                   ...variantData,
                   options: v.options?.length
                     ? {
-                        create: v.options.map((opt: any, optIndex: number) => {
-                          let mappedUrl = opt.imageUrl;
-                          const optImgIndices = parsedOptionMap[`${index}-${optIndex}`];
-                          if (optImgIndices && optImgIndices.length > 0 && uploadResults[optImgIndices[0]]) {
-                            mappedUrl = (uploadResults[optImgIndices[0]] as any).secure_url;
-                          }
-                          return {
-                            type: opt.type,
-                            value_en: opt.value_en,
-                            value_mm: opt.value_mm,
-                            color: opt.color,
-                            imageUrl: mappedUrl,
-                          };
-                        }),
+                        create: v.options.map(
+                          (opt: ParsedOption, optIndex: number) => {
+                            let mappedUrl = opt.imageUrl;
+                            const optImgIndices =
+                              parsedOptionMap[`${index}-${optIndex}`];
+                            if (
+                              optImgIndices &&
+                              optImgIndices.length > 0 &&
+                              uploadResults[optImgIndices[0]]
+                            ) {
+                              mappedUrl = (
+                                uploadResults[
+                                  optImgIndices[0]
+                                ] as UploadApiResponse
+                              ).secure_url;
+                            }
+                            return {
+                              type: opt.type,
+                              value_en: opt.value_en,
+                              value_mm: opt.value_mm,
+                              color: opt.color,
+                              imageUrl: mappedUrl,
+                            };
+                          },
+                        ),
                       }
                     : undefined,
                 },
@@ -435,7 +496,7 @@ export class ProductService {
             const imgIndices = parsedVariantMap[index.toString()] || [];
             if (imgIndices.length > 0) {
               const variantImages = imgIndices
-                .map((imgIdx) => uploadResults[imgIdx] as any)
+                .map((imgIdx) => uploadResults[imgIdx] as UploadApiResponse)
                 .filter((res) => !!res)
                 .map((result) => ({
                   url: result.secure_url,
@@ -469,8 +530,8 @@ export class ProductService {
           },
         });
       });
-    } catch (error) {
-      console.error('Update error:', error);
+    } catch (_error) {
+      console.error('Update error:', _error);
       throw new NotFoundException('Product not found or update failed');
     }
   }
@@ -480,41 +541,46 @@ export class ProductService {
       return await this.prisma.product.delete({
         where: { id },
       });
-    } catch (error) {
+    } catch {
       throw new NotFoundException('Product not found');
     }
   }
 
   // --- Helpers ---
-  private parseVariantsPayload(variantsData: any): any[] {
-    let variants: any[] = [];
+  private parseVariantsPayload(variantsData: unknown): ParsedVariant[] {
+    let variants: ParsedVariant[] = [];
     if (variantsData) {
       if (typeof variantsData === 'string') {
         try {
-          variants = JSON.parse(variantsData);
-        } catch (e) {
+          variants = JSON.parse(variantsData) as ParsedVariant[];
+        } catch {
           variants = [];
         }
       } else if (Array.isArray(variantsData)) {
-        variants = variantsData;
+        variants = variantsData as ParsedVariant[];
       }
     }
     if (!Array.isArray(variants)) {
       variants = [];
     }
-    return variants.filter((v) => v && typeof v === 'object' && v.sku && v.name_en && v.name_mm);
+    return variants.filter(
+      (v): v is ParsedVariant =>
+        !!(v && typeof v === 'object' && v.sku && v.name_en && v.name_mm),
+    );
   }
 
   private parseVariantImageMap(mapData?: string): Record<string, number[]> {
     if (!mapData) return {};
     try {
-      return JSON.parse(mapData);
-    } catch (e) {
+      return JSON.parse(mapData) as unknown as Record<string, number[]>;
+    } catch {
       return {};
     }
   }
 
-  private getMappedImageIndices(parsedMap: Record<string, number[]>): Set<number> {
+  private getMappedImageIndices(
+    parsedMap: Record<string, number[]>,
+  ): Set<number> {
     const allMappedIndices = new Set<number>();
     Object.values(parsedMap).forEach((indices) => {
       indices.forEach((i) => allMappedIndices.add(i));
