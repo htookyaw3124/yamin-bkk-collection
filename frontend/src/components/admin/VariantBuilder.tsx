@@ -83,6 +83,7 @@ function buildCombinations(
         value_mm: value.value_mm,
         color: value.color,
         imageUrl: value.imageUrl,
+        imageFile: value.imageFile,
       })),
       imageFiles: [],
     } satisfies VariantDraft;
@@ -138,7 +139,7 @@ export const VariantBuilder = ({
               ...group,
               values: [
                 ...group.values,
-                { id: makeId(), value_en: defaultValueEn, value_mm: defaultValueEn, color: group.name_en === "Color" ? "#000000" : undefined },
+                { id: makeId(), value_en: defaultValueEn, value_mm: defaultValueEn, color: group.name_en === "Color" ? "#000000" : undefined, imageFile: null },
               ],
             }
           : group,
@@ -149,8 +150,8 @@ export const VariantBuilder = ({
   const updateValue = (
     groupId: string,
     valueId: string,
-    field: "value_en" | "value_mm" | "color" | "imageUrl",
-    value: string,
+    field: "value_en" | "value_mm" | "color" | "imageUrl" | "imageFile",
+    value: string | File | null,
   ) => {
     onChangeGroups(
       variantGroups.map((group) =>
@@ -285,14 +286,38 @@ export const VariantBuilder = ({
                               onChange={(e) => updateValue(group.id, value.id, 'color', e.target.value)}
                               className="w-6 h-6 rounded-full border-none p-0 bg-transparent cursor-pointer overflow-hidden shadow-sm flex-shrink-0"
                            />
-                           <div className="relative group/img">
-                              <input 
-                                 type="text"
-                                 value={value.imageUrl || ""}
-                                 onChange={(e) => updateValue(group.id, value.id, 'imageUrl', e.target.value)}
-                                 placeholder="Image URL"
-                                 className="w-20 lg:w-32 bg-white/50 text-[9px] px-2 py-1 rounded border border-slate-200 outline-none focus:border-pink-500 transition-all"
-                              />
+                           <div className="relative group/img flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-white hover:border-pink-500 overflow-hidden cursor-pointer transition-colors shadow-sm shrink-0">
+                               {value.imageFile instanceof File ? (
+                                   <img src={URL.createObjectURL(value.imageFile)} className="w-full h-full object-cover" />
+                               ) : value.imageUrl ? (
+                                   <img src={value.imageUrl} className="w-full h-full object-cover" />
+                               ) : (
+                                   <span className="text-[10px] font-bold text-slate-300 group-hover/img:text-pink-500 transition-colors">+</span>
+                               )}
+                               <input 
+                                   type="file"
+                                   accept="image/*"
+                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                   onChange={(e) => {
+                                      if (e.target.files && e.target.files[0]) {
+                                         updateValue(group.id, value.id, 'imageFile', e.target.files[0]);
+                                      }
+                                      e.target.value = '';
+                                   }}
+                               />
+                               {(value.imageFile || value.imageUrl) && (
+                                   <button
+                                     type="button"
+                                     className="absolute top-0 right-0 bg-white/90 rounded-bl-lg p-0.5 opacity-0 group-hover/img:opacity-100 transition-opacity z-10"
+                                     onClick={(e) => {
+                                         e.stopPropagation();
+                                         updateValue(group.id, value.id, 'imageFile', null);
+                                         updateValue(group.id, value.id, 'imageUrl', "");
+                                     }}
+                                   >
+                                     <Trash2 size={8} className="text-red-500" />
+                                   </button>
+                               )}
                            </div>
                         </>
                      )}

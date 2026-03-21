@@ -20,39 +20,7 @@ export class ProductService {
     files: Express.Multer.File[] = [],
   ) {
     const { variants: _variants, ...productPayload } = createProductDto;
-    let variants: any[] = _variants || [];
-    console.log(
-      'Service Create DTO - Raw variants:',
-      _variants,
-      'Type:',
-      typeof _variants,
-    );
-
-    // Parse variants if they come as a JSON string
-    if (typeof _variants === 'string') {
-      try {
-        variants = JSON.parse(_variants);
-        console.log('Parsed variants from string:', variants);
-      } catch (e) {
-        console.error('Failed to parse variants string:', e);
-        variants = [];
-      }
-    } else if (Array.isArray(_variants)) {
-      variants = _variants;
-    } else {
-      variants = [];
-    }
-
-    // Ensure variants is an array
-    if (!Array.isArray(variants)) {
-      variants = [];
-    }
-
-    // Filter out empty or invalid variants
-    variants = variants.filter(
-      (v) => v && typeof v === 'object' && v.sku && v.name_en && v.name_mm,
-    );
-
+    const variants = this.parseVariantsPayload(_variants);
     console.log('Normalized variants:', variants);
 
     const category = await this.prisma.category.findFirst({
@@ -74,19 +42,11 @@ export class ProductService {
         )
       : [];
 
-    let parsedVariantMap: Record<string, number[]> = {};
-    if (productPayload.variantImageMap) {
-      try {
-        parsedVariantMap = JSON.parse(productPayload.variantImageMap);
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    const allMappedIndices = new Set<number>();
-    Object.values(parsedVariantMap).forEach((indices) => {
-      indices.forEach((i) => allMappedIndices.add(i));
-    });
+    const parsedVariantMap = this.parseVariantImageMap(productPayload.variantImageMap);
+    const parsedOptionMap = this.parseVariantImageMap((productPayload as any).optionImageMap);
+    const allMappedIndices = this.getMappedImageIndices(parsedVariantMap);
+    const allMappedOptionIndices = this.getMappedImageIndices(parsedOptionMap);
+    allMappedOptionIndices.forEach(i => allMappedIndices.add(i));
 
     // productImages are those not mapped to any variant
     const productImages = [];
@@ -127,13 +87,20 @@ export class ProductService {
                 stock: Number(variant.stock ?? 0),
                 options: variant.options?.length
                   ? {
-                      create: variant.options.map((option: any) => ({
-                        type: option.type,
-                        value_en: option.value_en,
-                        value_mm: option.value_mm,
-                        color: option.color,
-                        imageUrl: option.imageUrl,
-                      })),
+                      create: variant.options.map((option: any, optIndex: number) => {
+                        let mappedUrl = option.imageUrl;
+                        const optImgIndices = parsedOptionMap[`${index}-${optIndex}`];
+                        if (optImgIndices && optImgIndices.length > 0 && uploadResults[optImgIndices[0]]) {
+                          mappedUrl = (uploadResults[optImgIndices[0]] as any).secure_url;
+                        }
+                        return {
+                          type: option.type,
+                          value_en: option.value_en,
+                          value_mm: option.value_mm,
+                          color: option.color,
+                          imageUrl: mappedUrl,
+                        };
+                      }),
                     }
                   : undefined,
               })),
@@ -262,26 +229,12 @@ export class ProductService {
       stock,
       variants: _variants,
       variantImageMap,
+      optionImageMap,
       ...rest
-    } = updateProductDto;
+    } = updateProductDto as any;
 
     // Handle variants parsing (similar to create)
-    let variants: any[] = [];
-    if (_variants) {
-      if (typeof _variants === 'string') {
-        try {
-          variants = JSON.parse(_variants);
-        } catch (e) {
-          variants = [];
-        }
-      } else {
-        variants = _variants;
-      }
-    }
-
-    if (!Array.isArray(variants)) {
-      variants = [];
-    }
+    const variants = this.parseVariantsPayload(_variants);
 
     let resolvedCategoryId: string | undefined;
     if (categoryId) {
@@ -305,19 +258,11 @@ export class ProductService {
         )
       : [];
 
-    let parsedVariantMap: Record<string, number[]> = {};
-    if (variantImageMap) {
-      try {
-        parsedVariantMap = JSON.parse(variantImageMap);
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    const allMappedIndices = new Set<number>();
-    Object.values(parsedVariantMap).forEach((indices) => {
-      indices.forEach((i) => allMappedIndices.add(i));
-    });
+    const parsedVariantMap = this.parseVariantImageMap(variantImageMap);
+    const parsedOptionMap = this.parseVariantImageMap(optionImageMap);
+    const allMappedIndices = this.getMappedImageIndices(parsedVariantMap);
+    const allMappedOptionIndices = this.getMappedImageIndices(parsedOptionMap);
+    allMappedOptionIndices.forEach(i => allMappedIndices.add(i));
 
     const normalizedPrice =
       price === undefined || price === null ? undefined : Number(price);
@@ -415,14 +360,21 @@ export class ProductService {
                 });
                 if (v.options.length > 0) {
                   await tx.variantOption.createMany({
-                    data: v.options.map((opt: any) => ({
-                      type: opt.type,
-                      value_en: opt.value_en,
-                      value_mm: opt.value_mm,
-                      color: opt.color,
-                      imageUrl: opt.imageUrl,
-                      variantId,
-                    })),
+                    data: v.options.map((opt: any, optIndex: number) => {
+                      let mappedUrl = opt.imageUrl;
+                      const optImgIndices = parsedOptionMap[`${index}-${optIndex}`];
+                      if (optImgIndices && optImgIndices.length > 0 && uploadResults[optImgIndices[0]]) {
+                        mappedUrl = (uploadResults[optImgIndices[0]] as any).secure_url;
+                      }
+                      return {
+                        type: opt.type,
+                        value_en: opt.value_en,
+                        value_mm: opt.value_mm,
+                        color: opt.color,
+                        imageUrl: mappedUrl,
+                        variantId,
+                      };
+                    }),
                   });
                 }
               }
@@ -433,13 +385,20 @@ export class ProductService {
                   ...variantData,
                   options: v.options?.length
                     ? {
-                        create: v.options.map((opt: any) => ({
-                          type: opt.type,
-                          value_en: opt.value_en,
-                          value_mm: opt.value_mm,
-                          color: opt.color,
-                          imageUrl: opt.imageUrl,
-                        })),
+                        create: v.options.map((opt: any, optIndex: number) => {
+                          let mappedUrl = opt.imageUrl;
+                          const optImgIndices = parsedOptionMap[`${index}-${optIndex}`];
+                          if (optImgIndices && optImgIndices.length > 0 && uploadResults[optImgIndices[0]]) {
+                            mappedUrl = (uploadResults[optImgIndices[0]] as any).secure_url;
+                          }
+                          return {
+                            type: opt.type,
+                            value_en: opt.value_en,
+                            value_mm: opt.value_mm,
+                            color: opt.color,
+                            imageUrl: mappedUrl,
+                          };
+                        }),
                       }
                     : undefined,
                 },
@@ -499,5 +458,42 @@ export class ProductService {
     } catch (error) {
       throw new NotFoundException('Product not found');
     }
+  }
+
+  // --- Helpers ---
+  private parseVariantsPayload(variantsData: any): any[] {
+    let variants: any[] = [];
+    if (variantsData) {
+      if (typeof variantsData === 'string') {
+        try {
+          variants = JSON.parse(variantsData);
+        } catch (e) {
+          variants = [];
+        }
+      } else if (Array.isArray(variantsData)) {
+        variants = variantsData;
+      }
+    }
+    if (!Array.isArray(variants)) {
+      variants = [];
+    }
+    return variants.filter((v) => v && typeof v === 'object' && v.sku && v.name_en && v.name_mm);
+  }
+
+  private parseVariantImageMap(mapData?: string): Record<string, number[]> {
+    if (!mapData) return {};
+    try {
+      return JSON.parse(mapData);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  private getMappedImageIndices(parsedMap: Record<string, number[]>): Set<number> {
+    const allMappedIndices = new Set<number>();
+    Object.values(parsedMap).forEach((indices) => {
+      indices.forEach((i) => allMappedIndices.add(i));
+    });
+    return allMappedIndices;
   }
 }

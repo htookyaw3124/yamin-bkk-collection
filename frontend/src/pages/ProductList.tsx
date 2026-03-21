@@ -101,7 +101,21 @@ export const ProductList = () => {
 
   const [category, setCategory] = useState<CategoryFilter>("All");
   const [forFilter, setForFilter] = useState<ForFilter>("All");
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem(TOKEN_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed?.expiresAt && parsed?.token && parsed.expiresAt > Date.now()) {
+        return parsed.token;
+      }
+      localStorage.removeItem(TOKEN_KEY);
+      return null;
+    } catch {
+      localStorage.removeItem(TOKEN_KEY);
+      return null;
+    }
+  });
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -141,20 +155,7 @@ export const ProductList = () => {
   }, []);
 
 
-  useEffect(() => {
-    const raw = localStorage.getItem(TOKEN_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed?.expiresAt && parsed?.token && parsed.expiresAt > Date.now()) {
-        setAuthToken(parsed.token as string);
-      } else {
-        localStorage.removeItem(TOKEN_KEY);
-      }
-    } catch {
-      localStorage.removeItem(TOKEN_KEY);
-    }
-  }, []);
+
 
   useEffect(() => {
     if (isAdminView && !authToken) {

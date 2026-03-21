@@ -45,6 +45,7 @@ export type VariantOptionDraft = {
   value_mm: string;
   color?: string;
   imageUrl?: string;
+  imageFile?: File | null;
 };
 
 export type VariantGroupValue = {
@@ -53,6 +54,7 @@ export type VariantGroupValue = {
   value_mm: string;
   color?: string;
   imageUrl?: string;
+  imageFile?: File | null;
 };
 
 export type VariantGroup = {

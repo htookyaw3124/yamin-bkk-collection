@@ -139,6 +139,10 @@ export class CreateProductDto {
   @IsOptional()
   variantImageMap?: string;
 
+  @IsString()
+  @IsOptional()
+  optionImageMap?: string;
+
   @IsOptional()
   @Transform(({ value }: { value: unknown }) => {
     if (typeof value === 'string' && value.trim().length) {

@@ -269,9 +269,12 @@ export const AdminProductForm = ({
        }
     });
 
+    const optionImageMap: Record<string, number[]> = {};
+    const fileToIndexMap = new Map<File, number>();
+
     const variantPayload = validVariants.length
       ? validVariants
-          .map((variant) => ({
+          .map((variant, vIndex) => ({
             sku: variant.sku,
             name_en: variant.name_en,
             name_mm: variant.name_mm,
@@ -283,11 +286,24 @@ export const AdminProductForm = ({
               .filter(
                 (option) => option.type && option.value_en && option.value_mm,
               )
-              .map((option) => ({
-                type: option.type,
-                value_en: option.value_en,
-                value_mm: option.value_mm,
-              })),
+              .map((option, oIndex) => {
+                if (option.imageFile) {
+                  let fileIdx = fileToIndexMap.get(option.imageFile);
+                  if (fileIdx === undefined) {
+                    fileIdx = allFilesToUpload.length;
+                    fileToIndexMap.set(option.imageFile, fileIdx);
+                    allFilesToUpload.push(option.imageFile);
+                  }
+                  optionImageMap[`${vIndex}-${oIndex}`] = [fileIdx];
+                }
+                return {
+                  type: option.type,
+                  value_en: option.value_en,
+                  value_mm: option.value_mm,
+                  color: option.color,
+                  imageUrl: option.imageUrl,
+                };
+              }),
           }))
       : undefined;
 
@@ -312,6 +328,9 @@ export const AdminProductForm = ({
         formPayload.append("variants", JSON.stringify(variantPayload));
         if (Object.keys(variantImageMap).length > 0) {
            formPayload.append("variantImageMap", JSON.stringify(variantImageMap));
+        }
+        if (Object.keys(optionImageMap).length > 0) {
+           formPayload.append("optionImageMap", JSON.stringify(optionImageMap));
         }
       }
       if (formData.videoUrl.trim()) {

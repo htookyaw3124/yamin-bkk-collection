@@ -23,6 +23,8 @@ const PAYMENT_STATUSES: PaymentStatus[] = [
   "REFUNDED",
 ];
 
+const labelBase = "text-[10px] font-black uppercase tracking-widest text-slate-400";
+
 type OrderItemDraft = {
   id: string; // temp id for UI
   productId: string;
