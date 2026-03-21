@@ -67,7 +67,7 @@ export const AdminOrdersPanel = ({ lang }: AdminOrdersPanelProps) => {
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <select
-            className="h-14 bg-white border border-slate-100 rounded-2xl px-6 text-[10px] font-bold uppercase tracking-widest text-slate-500 outline-none focus:border-slate-900 hover:bg-slate-50 transition-all cursor-pointer shadow-sm"
+            className="h-14 bg-white border border-slate-100 rounded-2xl px-6 text-[10px] font-bold uppercase tracking-widest text-slate-500 outline-none focus:border-brand hover:bg-slate-50 transition-all cursor-pointer shadow-sm"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -80,15 +80,15 @@ export const AdminOrdersPanel = ({ lang }: AdminOrdersPanelProps) => {
           </select>
           <button
             onClick={() => setShowCreateForm((prev) => !prev)}
-            className="h-14 bg-slate-900 text-white rounded-2xl px-8 text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3"
+            className="h-10 bg-brand hover:bg-brand-hover text-white rounded-full px-6 text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-2"
           >
             {showCreateForm ? (
                <>
-                 <X size={16} /> Cancel
+                 <X size={14} /> Close
                </>
             ) : (
                <>
-                 <Upload size={16} /> Create Order
+                 <Upload size={14} /> Create Order
                </>
             )}
           </button>

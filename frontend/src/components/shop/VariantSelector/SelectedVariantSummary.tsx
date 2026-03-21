@@ -11,7 +11,7 @@ export const SelectedVariantSummary = ({ product, variant, lang }: Props) => {
 
   return (
     <div className="mt-6 pt-6 border-t border-slate-100 animate-in slide-in-from-top-4 duration-500">
-      <div className="p-6 md:p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+      <div className="p-6 md:p-8 bg-brand text-white rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/30 to-rose-500/30 opacity-50 blur-2xl transition-opacity duration-700 translate-x-1/2 translate-y-1/2" />
         
         <div className="relative z-10 space-y-6">

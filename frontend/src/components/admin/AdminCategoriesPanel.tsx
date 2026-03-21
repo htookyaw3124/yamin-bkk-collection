@@ -99,7 +99,7 @@ export const AdminCategoriesPanel = ({
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">English Name</label>
             <input
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 transition-all"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-4 focus:ring-brand/20 transition-all"
               placeholder="e.g. T-Shirts"
               value={newCategory.name_en}
               onChange={(event) => {
@@ -115,7 +115,7 @@ export const AdminCategoriesPanel = ({
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Burmese Name</label>
             <input
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 transition-all font-myanmar"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-4 focus:ring-brand/20 transition-all font-myanmar"
               placeholder="ဥပမာ - တီရှပ်များ"
               value={newCategory.name_mm}
               onChange={(event) =>
@@ -129,7 +129,7 @@ export const AdminCategoriesPanel = ({
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">URL Slug</label>
             <input
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 transition-all font-mono"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-4 focus:ring-brand/20 transition-all font-mono"
               placeholder="t-shirts"
               value={newCategory.slug}
               onChange={(event) => {
@@ -150,7 +150,7 @@ export const AdminCategoriesPanel = ({
             !newCategory.name_mm ||
             !newCategory.slug
           }
-          className="bg-slate-900 text-white rounded-xl px-10 py-4 text-xs font-bold uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+          className="h-12 bg-brand hover:bg-brand-hover text-white rounded-full px-8 text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {isSaving ? "Creating..." : "Add Category"}
         </button>
@@ -177,7 +177,7 @@ export const AdminCategoriesPanel = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <input
-              className="rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-pink-500 transition-all"
+              className="rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand transition-all"
               placeholder="Name (English)"
               value={editForm.name_en}
               onChange={(event) =>
@@ -188,7 +188,7 @@ export const AdminCategoriesPanel = ({
               }
             />
             <input
-              className="rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-pink-500 transition-all font-myanmar"
+              className="rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand transition-all font-myanmar"
               placeholder="Name (Burmese)"
               value={editForm.name_mm}
               onChange={(event) =>
@@ -199,7 +199,7 @@ export const AdminCategoriesPanel = ({
               }
             />
             <input
-              className="rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-pink-500 transition-all font-mono"
+              className="rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand transition-all font-mono"
               placeholder="Slug"
               value={editForm.slug}
               onChange={(event) =>
@@ -213,7 +213,7 @@ export const AdminCategoriesPanel = ({
           <button
             onClick={handleUpdate}
             disabled={isSaving}
-            className="bg-slate-900 text-white rounded-xl px-10 py-4 text-xs font-bold uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all hover:-translate-y-1 active:scale-95"
+            className="h-12 bg-brand hover:bg-brand-hover text-white rounded-full px-8 text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isSaving ? "Saving..." : "Save Changes"}
           </button>

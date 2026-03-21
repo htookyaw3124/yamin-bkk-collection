@@ -54,9 +54,9 @@ export const AdminProductForm = ({
     variantGroups: [],
   });
   const inputBase =
-    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200";
+    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20";
   const textareaBase =
-    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200 resize-none";
+    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 resize-none";
   const selectBase = `${inputBase} pr-8`;
   const labelBase =
     "block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2";
@@ -744,7 +744,7 @@ export const AdminProductForm = ({
                     <input
                       required
                       placeholder="SKU"
-                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
                       value={variant.sku}
                       onChange={(event) =>
                         updateVariantField(
@@ -760,7 +760,7 @@ export const AdminProductForm = ({
                       placeholder={
                         isMM ? "စျေးနှုန်း (အကွာအဝေး)" : "Price Override"
                       }
-                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
                       value={variant.priceOverride}
                       onChange={(event) =>
                         updateVariantField(
@@ -773,7 +773,7 @@ export const AdminProductForm = ({
                     <input
                       type="number"
                       placeholder={isMM ? "စာရင်းရှိ ပမာဏ" : "Variant Stock"}
-                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
                       value={variant.stock}
                       onChange={(event) =>
                         updateVariantField(
@@ -827,7 +827,7 @@ export const AdminProductForm = ({
                       placeholder={
                         isMM ? "အမည် (English)" : "Variant Name (English)"
                       }
-                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
                       value={variant.name_en}
                       onChange={(event) =>
                         updateVariantField(
@@ -841,7 +841,7 @@ export const AdminProductForm = ({
                       placeholder={
                         isMM ? "အမည် (မြန်မာ)" : "Variant Name (Burmese)"
                       }
-                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900 font-myanmar"
+                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand font-myanmar"
                       value={variant.name_mm}
                       onChange={(event) =>
                         updateVariantField(
@@ -885,7 +885,7 @@ export const AdminProductForm = ({
                                   ? "အမျိုးအစား (size/color)"
                                   : "Type (size/color)"
                               }
-                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
                               value={option.type}
                               onChange={(event) =>
                                 updateVariantOption(
@@ -900,7 +900,7 @@ export const AdminProductForm = ({
                               placeholder={
                                 isMM ? "တန်ဖိုး (English)" : "Value (English)"
                               }
-                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
                               value={option.value_en}
                               onChange={(event) =>
                                 updateVariantOption(
@@ -915,7 +915,7 @@ export const AdminProductForm = ({
                               placeholder={
                                 isMM ? "တန်ဖိုး (မြန်မာ)" : "Value (Burmese)"
                               }
-                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900 font-myanmar"
+                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand font-myanmar"
                               value={option.value_mm}
                               onChange={(event) =>
                                 updateVariantOption(
@@ -948,7 +948,7 @@ export const AdminProductForm = ({
 
         <button
           type="submit"
-          className="w-full bg-slate-900 text-white py-4 rounded-full text-xs font-bold uppercase tracking-[0.3em] hover:bg-pink-600 transition-all shadow-xl shadow-slate-200"
+          className="w-full bg-brand text-white py-4 rounded-full text-xs font-bold uppercase tracking-[0.3em] hover:bg-brand-hover transition-all shadow-xl btn-premium"
           disabled={isSubmitting}
         >
           {isSubmitting

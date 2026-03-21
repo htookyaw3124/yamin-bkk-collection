@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery, useLoginMutation } from "../lib/api";
+import {
+  useGetProductsQuery,
+  useGetCategoriesQuery,
+  useGetBrandsQuery,
+  useLoginMutation,
+} from "../lib/api";
 import { useTranslation } from "react-i18next";
 import i18n from "../lib/i18n";
 import {
@@ -10,17 +15,11 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { ShoppingBag, X, ArrowLeft } from "lucide-react";
+import { ShoppingBag, X } from "lucide-react";
 
 import { TOKEN_KEY } from "../constants.ts";
-import type {
-  Lang,
-  Product,
-  CategoryFilter,
-  ForFilter,
-} from "../types";
+import type { Lang, Product, CategoryFilter, ForFilter } from "../types";
 import { matchesCategoryFilter } from "../utils/helpers";
-
 
 import { ShopView } from "../components/shop/ShopView";
 import { ProductDetail } from "../components/shop/ProductDetail";
@@ -88,16 +87,20 @@ export const ProductList = () => {
   const {
     data: categoryOptions = [],
     isLoading: isFetchingCategories,
-    error: categoryFetchErrorData
+    error: categoryFetchErrorData,
   } = useGetCategoriesQuery();
-  const categoryFetchError = categoryFetchErrorData ? "Unable to load categories" : null;
+  const categoryFetchError = categoryFetchErrorData
+    ? "Unable to load categories"
+    : null;
 
   const {
     data: brands = [],
     isLoading: isFetchingBrands,
-    error: brandsFetchErrorData
+    error: brandsFetchErrorData,
   } = useGetBrandsQuery();
-  const brandsFetchError = brandsFetchErrorData ? "Unable to load brands" : null;
+  const brandsFetchError = brandsFetchErrorData
+    ? "Unable to load brands"
+    : null;
 
   const [category, setCategory] = useState<CategoryFilter>("All");
   const [forFilter, setForFilter] = useState<ForFilter>("All");
@@ -131,8 +134,10 @@ export const ProductList = () => {
   const {
     data: products = [],
     isLoading: isLoadingProducts,
-    error: productErrorData
-  } = useGetProductsQuery(isAdminView ? undefined : (activeBrandFilter || undefined));
+    error: productErrorData,
+  } = useGetProductsQuery(
+    isAdminView ? undefined : activeBrandFilter || undefined,
+  );
   const productError = productErrorData ? "Unable to load products." : null;
 
   const persistToken = useCallback(
@@ -154,9 +159,6 @@ export const ProductList = () => {
     setLoginError(null);
   }, []);
 
-
-
-
   useEffect(() => {
     if (isAdminView && !authToken) {
       openLoginModal();
@@ -167,8 +169,6 @@ export const ProductList = () => {
     document.documentElement.lang = lang;
     i18n.changeLanguage(lang);
   }, [lang]);
-
-
 
   // Removed old manual fetching functions
 
@@ -218,13 +218,14 @@ export const ProductList = () => {
         product.brandId === activeBrandFilter ||
         product.brand?.id === activeBrandFilter;
 
-      const saleMatch = !showSaleOnly || product.isSale || (product.price < (product.originalPrice ?? 0));
+      const saleMatch =
+        !showSaleOnly ||
+        product.isSale ||
+        product.price < (product.originalPrice ?? 0);
 
       return catMatch && forMatch && brandMatch && saleMatch;
     });
   }, [category, forFilter, products, activeBrandFilter, showSaleOnly]);
-
-
 
   const handleViewDetails = (productId: string) => {
     navigate(`/product/${productId}`);
@@ -242,26 +243,15 @@ export const ProductList = () => {
 
   const activeBrandName = useMemo(() => {
     if (!activeBrandFilter) return null;
-    const brand = brands.find(b => b.id === activeBrandFilter);
+    const brand = brands.find((b) => b.id === activeBrandFilter);
     return brand ? brand.name : null;
   }, [activeBrandFilter, brands]);
 
   return (
-    <div className="min-h-screen bg-white selection:bg-pink-100 selection:text-pink-900">
+    <div className="min-h-screen bg-white selection:bg-brand/20 selection:text-brand">
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            {location.pathname !== "/" && (
-              <button
-                onClick={() => navigate("/")}
-                className="p-2 hover:bg-slate-100 rounded-full transition-colors flex items-center text-slate-600"
-              >
-                <ArrowLeft size={20} />
-                <span className="ml-2 hidden sm:inline text-sm font-medium">
-                  {t("back")}
-                </span>
-              </button>
-            )}
             <h1
               onClick={() => {
                 setSearchParams({});
@@ -283,7 +273,7 @@ export const ProductList = () => {
                 onClick={() => setLang("mm")}
                 className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-200 ${
                   lang === "mm"
-                    ? "bg-white shadow-sm text-pink-500"
+                    ? "bg-white shadow-sm text-brand"
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
@@ -293,7 +283,7 @@ export const ProductList = () => {
                 onClick={() => setLang("en")}
                 className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-200 ${
                   lang === "en"
-                    ? "bg-white shadow-sm text-pink-500"
+                    ? "bg-white shadow-sm text-brand"
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
@@ -307,12 +297,12 @@ export const ProductList = () => {
               title={isAdminView ? "Back to Shop" : "Admin Panel"}
             >
               {isAdminView ? (
-                <ShoppingBag size={20} className="text-pink-500" />
+                <ShoppingBag size={20} className="text-brand" />
               ) : (
                 <ShoppingBag size={20} className="text-slate-700" />
               )}
               {!isAdminView && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-pink-500 rounded-full"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full"></span>
               )}
             </button>
           </div>
@@ -324,11 +314,7 @@ export const ProductList = () => {
       <Routes>
         <Route
           path="/"
-          element={
-            <HomeView
-              onBrandSelect={handleBrandSelect}
-            />
-          }
+          element={<HomeView onBrandSelect={handleBrandSelect} />}
         />
         <Route
           path="/shop"
@@ -377,11 +363,7 @@ export const ProductList = () => {
         />
         <Route
           path="*"
-          element={
-            <HomeView
-              onBrandSelect={handleBrandSelect}
-            />
-          }
+          element={<HomeView onBrandSelect={handleBrandSelect} />}
         />
       </Routes>
 
@@ -400,13 +382,13 @@ export const ProductList = () => {
               {t("connect")}
             </h4>
             <ul className="text-xs text-slate-500 space-y-3 uppercase tracking-widest">
-              <li className="hover:text-pink-600 cursor-pointer transition-colors">
+              <li className="hover:text-brand cursor-pointer transition-colors">
                 Facebook
               </li>
-              <li className="hover:text-pink-600 cursor-pointer transition-colors">
+              <li className="hover:text-brand cursor-pointer transition-colors">
                 TikTok Shop
               </li>
-              <li className="hover:text-pink-600 cursor-pointer transition-colors">
+              <li className="hover:text-brand cursor-pointer transition-colors">
                 Telegram Channel
               </li>
             </ul>
@@ -455,7 +437,7 @@ export const ProductList = () => {
                 <input
                   type="email"
                   required
-                  className="mt-1 w-full border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                  className="mt-1 w-full border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
                   value={loginForm.email}
                   onChange={(event) =>
                     setLoginForm((prev) => ({
@@ -472,7 +454,7 @@ export const ProductList = () => {
                 <input
                   type="password"
                   required
-                  className="mt-1 w-full border-b border-slate-200 py-2 text-sm outline-none focus:border-slate-900"
+                  className="mt-1 w-full border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
                   value={loginForm.password}
                   onChange={(event) =>
                     setLoginForm((prev) => ({
@@ -488,7 +470,7 @@ export const ProductList = () => {
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="w-full bg-slate-900 text-white py-3 rounded-full text-xs font-bold uppercase tracking-[0.3em] hover:bg-pink-600 transition-colors"
+                className="w-full bg-brand text-white py-3 rounded-full text-xs font-bold uppercase tracking-[0.3em] hover:bg-brand-hover transition-colors btn-premium"
               >
                 {isLoggingIn ? t("signingIn") : t("logIn")}
               </button>

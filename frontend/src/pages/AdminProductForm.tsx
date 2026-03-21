@@ -51,7 +51,7 @@ export const AdminProductForm = () => {
             </label>
             <input
               {...register("name_en", { required: true })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
               placeholder="e.g. Silk Dress"
             />
             {errors.name_en && (
@@ -64,7 +64,7 @@ export const AdminProductForm = () => {
             </label>
             <input
               {...register("name_mm", { required: true })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all font-myanmar"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all font-myanmar"
               placeholder="ဥပမာ - ပိုးသားဂါဝန်"
             />
             {errors.name_mm && (
@@ -82,7 +82,7 @@ export const AdminProductForm = () => {
             <textarea
               {...register("description_en")}
               rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
             />
           </div>
           <div>
@@ -92,7 +92,7 @@ export const AdminProductForm = () => {
             <textarea
               {...register("description_mm")}
               rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all font-myanmar"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all font-myanmar"
             />
           </div>
         </div>
@@ -106,7 +106,7 @@ export const AdminProductForm = () => {
             <input
               type="number"
               {...register("price", { required: true, min: 0 })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand/20 outline-none"
             />
           </div>
           <div>
@@ -116,7 +116,7 @@ export const AdminProductForm = () => {
             <input
               type="number"
               {...register("stock", { required: true, min: 0 })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand/20 outline-none"
             />
           </div>
           <div>
@@ -125,7 +125,7 @@ export const AdminProductForm = () => {
             </label>
             <select
               {...register("categoryId", { required: true })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none bg-white"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand/20 outline-none bg-white"
             >
               <option value="clothes-woman">Woman</option>
               <option value="clothes-man">Man</option>

@@ -28,7 +28,7 @@ export const HomeView = ({ onBrandSelect }: HomeViewProps) => {
       <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 mt-24">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
           <div className="space-y-4">
-            <p className="text-[10px] tracking-[0.5em] uppercase text-pink-500 font-bold">
+            <p className="text-[10px] tracking-[0.5em] uppercase text-brand font-bold">
               Our Collections
             </p>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900">
@@ -38,7 +38,7 @@ export const HomeView = ({ onBrandSelect }: HomeViewProps) => {
           <div className="gradient-separator flex-grow hidden md:block mb-4 mx-12"></div>
           <button 
             onClick={() => navigate("/shop")}
-            className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 transition-colors border-b border-transparent hover:border-slate-900 pb-1 h-fit"
+            className="text-[10px] font-bold uppercase tracking-[0.3em] text-white transition-all duration-500 bg-brand hover:bg-brand-hover px-6 py-3 rounded-full btn-premium shadow-md hover:shadow-xl hover:-translate-y-1 h-fit"
           >
             {t("shop")} All
           </button>
@@ -64,7 +64,7 @@ export const HomeView = ({ onBrandSelect }: HomeViewProps) => {
                 
                 {/* Overlays */}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/10 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-700" />
-                <div className="absolute inset-0 bg-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="absolute inset-0 bg-brand/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
                 <div className="absolute inset-0 p-6 sm:p-8 lg:p-10 flex flex-col justify-end items-center text-center">
                   <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700 ease-out">

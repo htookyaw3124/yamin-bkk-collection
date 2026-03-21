@@ -209,7 +209,7 @@ export const AdminOrderForm = ({ onCancel }: AdminOrderFormProps) => {
                   <div className="h-12 flex items-center px-4 rounded-xl bg-slate-50 animate-pulse text-[10px] font-bold text-slate-300 uppercase italic">Retrieving secure data...</div>
                 ) : (
                   <select
-                    className="w-full h-14 bg-slate-50 border border-transparent rounded-2xl px-5 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-slate-900 transition-all appearance-none cursor-pointer"
+                    className="w-full h-14 bg-slate-50 border border-transparent rounded-2xl px-5 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-brand transition-all appearance-none cursor-pointer"
                     value={customerId}
                     onChange={(e) => setCustomerId(e.target.value)}
                   >
@@ -229,7 +229,7 @@ export const AdminOrderForm = ({ onCancel }: AdminOrderFormProps) => {
               <div className="space-y-2">
                 <label className={labelBase}>Legal Name</label>
                 <input
-                  className="w-full h-14 bg-slate-50 border border-transparent rounded-2xl px-5 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-slate-900 transition-all"
+                  className="w-full h-14 bg-slate-50 border border-transparent rounded-2xl px-5 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-brand transition-all"
                   placeholder="Enter contact name"
                   value={newCustomerName}
                   onChange={(e) => setNewCustomerName(e.target.value)}
@@ -238,7 +238,7 @@ export const AdminOrderForm = ({ onCancel }: AdminOrderFormProps) => {
               <div className="space-y-2">
                 <label className={labelBase}>Encrypted Contact</label>
                 <input
-                  className="w-full h-14 bg-slate-50 border border-transparent rounded-2xl px-5 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-slate-900 transition-all"
+                  className="w-full h-14 bg-slate-50 border border-transparent rounded-2xl px-5 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-brand transition-all"
                   placeholder="+95 9..."
                   value={newCustomerPhone}
                   onChange={(e) => setNewCustomerPhone(e.target.value)}
@@ -250,7 +250,7 @@ export const AdminOrderForm = ({ onCancel }: AdminOrderFormProps) => {
           <div className="space-y-2">
             <label className={labelBase}>Logistic Endpoint</label>
             <textarea
-              className="w-full bg-slate-50 border border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-slate-900 transition-all resize-none"
+              className="w-full bg-slate-50 border border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-brand transition-all resize-none"
               placeholder="Primary shipping coordinate..."
               rows={3}
               value={deliveryAddress}
@@ -273,7 +273,7 @@ export const AdminOrderForm = ({ onCancel }: AdminOrderFormProps) => {
               <label className={labelBase}>Order State</label>
               <div className="relative">
                 <select
-                  className="w-full h-14 bg-slate-50 border border-transparent rounded-2xl px-5 text-[10px] font-black uppercase tracking-widest text-slate-900 outline-none focus:bg-white focus:border-slate-900 transition-all appearance-none cursor-pointer"
+                  className="w-full h-14 bg-slate-50 border border-transparent rounded-2xl px-5 text-[10px] font-black uppercase tracking-widest text-slate-900 outline-none focus:bg-white focus:border-brand transition-all appearance-none cursor-pointer"
                   value={orderStatus}
                   onChange={(e) => setOrderStatus(e.target.value as OrderStatus)}
                 >
@@ -290,7 +290,7 @@ export const AdminOrderForm = ({ onCancel }: AdminOrderFormProps) => {
               <label className={labelBase}>Payment State</label>
               <div className="relative">
                 <select
-                  className="w-full h-14 bg-slate-50 border border-transparent rounded-2xl px-5 text-[10px] font-black uppercase tracking-widest text-slate-900 outline-none focus:bg-white focus:border-slate-900 transition-all appearance-none cursor-pointer"
+                  className="w-full h-14 bg-slate-50 border border-transparent rounded-2xl px-5 text-[10px] font-black uppercase tracking-widest text-slate-900 outline-none focus:bg-white focus:border-brand transition-all appearance-none cursor-pointer"
                   value={paymentStatus}
                   onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}
                 >
@@ -310,7 +310,7 @@ export const AdminOrderForm = ({ onCancel }: AdminOrderFormProps) => {
             <div className="relative">
               <input
                 type="number"
-                className="w-full h-20 bg-slate-900 border-none rounded-2xl px-8 text-2xl font-black text-emerald-400 outline-none focus:ring-4 focus:ring-emerald-400/20 transition-all shadow-inner placeholder:text-slate-800"
+                className="w-full h-20 bg-slate-900 border-none rounded-2xl px-8 text-2xl font-black text-emerald-400 outline-none focus:ring-4 focus:ring-brand/20 transition-all shadow-inner placeholder:text-slate-800"
                 placeholder="0.00"
                 value={paidAmount}
                 onChange={(e) => setPaidAmount(e.target.value)}
@@ -468,7 +468,7 @@ export const AdminOrderForm = ({ onCancel }: AdminOrderFormProps) => {
         <button
           onClick={handleSubmit}
           disabled={isCreating}
-          className="h-14 px-12 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-slate-900/40 hover:bg-slate-800 transition-all disabled:opacity-20 hover:-translate-y-1 active:scale-95"
+          className="h-14 px-12 rounded-full bg-brand text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-brand/40 hover:bg-brand-hover transition-all disabled:opacity-20 hover:-translate-y-1 active:scale-95 btn-premium"
         >
           {isCreating ? "Writing State..." : "Execute Order"}
         </button>

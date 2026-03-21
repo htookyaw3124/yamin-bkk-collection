@@ -33,7 +33,7 @@ export const VariantGrid = ({ product, lang, selectedVariantId, onVariantSelect 
               disabled={!inStock}
               className={`relative p-5 rounded-3xl border transition-all duration-500 group text-left ${
                 isSelected
-                  ? "border-slate-900 bg-slate-900 text-white shadow-2xl scale-[1.02] z-10"
+                  ? "border-brand bg-brand text-white shadow-2xl scale-[1.02] z-10"
                   : inStock
                     ? "border-slate-100 bg-white hover:border-slate-900/10 hover:shadow-xl hover:-translate-y-1"
                     : "border-slate-50 bg-slate-50/50 opacity-40 cursor-not-allowed"

@@ -106,7 +106,7 @@ export const AdminBrandsPanel = ({
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Brand Identity</label>
             <div className="relative">
               <input
-                className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 transition-all font-semibold"
+                className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-4 focus:ring-brand/20 transition-all font-semibold"
                 placeholder="e.g. Nike"
                 value={newBrand.name}
                 onChange={(e) => setNewBrand({ ...newBrand, name: e.target.value })}
@@ -118,7 +118,7 @@ export const AdminBrandsPanel = ({
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Visual Asset URL</label>
             <div className="relative">
               <input
-                className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 transition-all font-mono"
+                className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-4 focus:ring-brand/20 transition-all font-mono"
                 placeholder="https://logo-source.com/nike.png"
                 value={newBrand.logo_url}
                 onChange={(e) => setNewBrand({ ...newBrand, logo_url: e.target.value })}
@@ -130,7 +130,7 @@ export const AdminBrandsPanel = ({
         <button
           onClick={handleCreate}
           disabled={isSaving || !newBrand.name}
-          className="bg-slate-900 text-white rounded-xl px-10 py-4 text-xs font-bold uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+          className="h-12 bg-brand hover:bg-brand-hover text-white rounded-full px-8 text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {isSaving ? "Registering..." : "Add Brand"}
         </button>
@@ -157,13 +157,13 @@ export const AdminBrandsPanel = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <input
-              className="rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-pink-500 transition-all font-bold"
+              className="rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand transition-all font-bold"
               placeholder="Brand Name"
               value={editForm.name}
               onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
             />
             <input
-              className="rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-pink-500 transition-all font-mono"
+              className="rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand transition-all font-mono"
               placeholder="Logo URL"
               value={editForm.logo_url}
               onChange={(e) => setEditForm({ ...editForm, logo_url: e.target.value })}
@@ -172,7 +172,7 @@ export const AdminBrandsPanel = ({
           <button
             onClick={handleUpdate}
             disabled={isSaving || !editForm.name}
-            className="bg-slate-900 text-white rounded-xl px-10 py-4 text-xs font-bold uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all hover:-translate-y-1 active:scale-95"
+            className="h-12 bg-brand hover:bg-brand-hover text-white rounded-full px-8 text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isSaving ? "Updating..." : "Save Changes"}
           </button>

@@ -3,6 +3,9 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-myanmar: "Noto Sans Myanmar", ui-sans-serif, system-ui;
+  --color-brand: #DE7C9A;
+  --color-brand-hover: #c76583;
+  --color-admin-bg: #FCF8F5;
 }
 
 @layer base {
@@ -88,4 +91,38 @@
 
 .animate-zoom-in {
   animation: zoom-in 0.3s ease-out forwards;
+}
+
+/* Premium Button Hover Shine */
+.btn-premium {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-premium::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-25deg);
+  z-index: 10;
+}
+.btn-premium:hover::after {
+  animation: shine 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes shine {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* Glass panel */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
 }

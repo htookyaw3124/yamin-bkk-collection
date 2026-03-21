@@ -43,7 +43,7 @@ export const Carousel = () => {
 
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-4">
         <div className="animate-in fade-in slide-in-from-bottom-10 duration-1000 ease-out flex flex-col items-center">
-          <p className="text-[9px] md:text-[11px] lg:text-[12px] font-black uppercase tracking-[0.6em] text-pink-400 mb-6 drop-shadow-lg opacity-90">
+          <p className="text-[9px] md:text-[11px] lg:text-[12px] font-black uppercase tracking-[0.6em] text-white/50 mb-6 drop-shadow-lg opacity-90">
             Exclusive Selection
           </p>
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-[-0.05em] leading-[1.05] text-white drop-shadow-2xl max-w-4xl mx-auto mb-12">
@@ -53,7 +53,7 @@ export const Carousel = () => {
           </h1>
           <div className="flex items-center justify-center gap-6">
             <div className="w-16 h-[1px] bg-gradient-to-r from-transparent to-white/40"></div>
-            <div className="w-2.5 h-2.5 rounded-full border border-pink-500 bg-pink-500/20 shadow-[0_0_15px_rgba(236,72,153,0.5)] animate-pulse"></div>
+            <div className="w-2.5 h-2.5 rounded-full border border-brand bg-brand/20 shadow-[0_0_15px_var(--color-brand)] animate-pulse"></div>
             <div className="w-16 h-[1px] bg-gradient-to-l from-transparent to-white/40"></div>
           </div>
         </div>

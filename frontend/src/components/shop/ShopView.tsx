@@ -38,8 +38,8 @@ export const ShopView = ({
       <aside className="w-full md:w-64 flex-shrink-0">
         <div className="sticky top-24 bg-white/60 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center space-x-2 mb-6 text-slate-800">
-            <div className="p-2 bg-pink-50 rounded-lg">
-               <span className="text-pink-500 font-bold block bg-pink-500 w-1.5 h-1.5 rounded-full" />
+            <div className="p-2 bg-brand/10 rounded-lg">
+               <span className="text-brand font-bold block bg-brand w-1.5 h-1.5 rounded-full" />
             </div>
             <h3 className="font-semibold text-lg">{t("filters")}</h3>
           </div>
@@ -72,7 +72,7 @@ export const ShopView = ({
             {/* Sale Items Toggle */}
             <div className="pt-6 border-t border-slate-200">
               <label className="flex items-center justify-between cursor-pointer group">
-                <span className="text-xs font-bold uppercase tracking-widest text-slate-600 group-hover:text-pink-500 transition-colors">
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-600 group-hover:text-brand transition-colors">
                   {t("saleItemsOnly")}
                 </span>
                 <div className="relative">
@@ -82,7 +82,7 @@ export const ShopView = ({
                     onChange={onToggleSale}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-500"></div>
+                  <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand"></div>
                 </div>
               </label>
             </div>
@@ -140,7 +140,7 @@ export const ShopView = ({
                 onForChange("All");
                 if (showSaleOnly) onToggleSale();
               }}
-              className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-900 border-b border-slate-900 pb-1 hover:text-pink-600 hover:border-pink-600 transition-colors"
+              className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-900 border-b border-slate-900 pb-1 hover:text-brand hover:border-brand transition-colors"
             >
               {t("clearFilters")}
             </button>

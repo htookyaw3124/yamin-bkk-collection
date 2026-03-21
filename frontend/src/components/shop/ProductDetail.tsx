@@ -252,7 +252,7 @@ export const ProductDetail = ({
                 href={`${MESSENGER_URL}?text=${getOrderMessage()}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-5 rounded-2xl flex flex-col items-center justify-center gap-1.5 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-[0.2em] shadow-xl"
+                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-5 rounded-full flex flex-col items-center justify-center gap-1.5 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-[0.2em] shadow-xl btn-premium"
               >
                 <MessageCircle size={20} strokeWidth={2.5} />
                 <span>Messenger</span>
@@ -261,7 +261,7 @@ export const ProductDetail = ({
                 href={`${TELEGRAM_URL}?text=${getOrderMessage()}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-gradient-to-r from-sky-500 to-sky-400 text-white py-5 rounded-2xl flex flex-col items-center justify-center gap-1.5 hover:-translate-y-1 hover:shadow-2xl hover:shadow-sky-500/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-[0.2em] shadow-xl"
+                className="bg-gradient-to-r from-sky-500 to-sky-400 text-white py-5 rounded-full flex flex-col items-center justify-center gap-1.5 hover:-translate-y-1 hover:shadow-2xl hover:shadow-sky-500/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-[0.2em] shadow-xl btn-premium"
               >
                 <Send size={20} strokeWidth={2.5} />
                 <span>Telegram</span>
@@ -270,7 +270,7 @@ export const ProductDetail = ({
             
             <button 
               onClick={onClose}
-              className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-[10px] hover:bg-slate-800 transition-colors shadow-xl"
+              className="w-full bg-brand text-white py-4 rounded-full font-bold uppercase tracking-[0.2em] text-[10px] hover:bg-brand-hover transition-colors shadow-xl btn-premium"
             >
               {t("continueShopping")}
             </button>

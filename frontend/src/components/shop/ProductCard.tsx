@@ -27,7 +27,7 @@ export const ProductCard = ({
       className="group relative flex flex-col animate-in fade-in duration-700"
       onClick={() => onViewDetails(product.id)}
     >
-      <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-slate-100 shadow-sm group-hover:shadow-2xl group-hover:shadow-pink-500/10 transition-all duration-700">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-slate-100 shadow-sm group-hover:shadow-2xl group-hover:shadow-brand/10 transition-all duration-700">
         <img
           src={displayImage}
           alt={name}
@@ -43,7 +43,7 @@ export const ProductCard = ({
             {getCategoryLabel(product.category)}
           </div>
           {(product.isSale || (product.originalPrice && product.originalPrice > product.price)) && (
-            <div className="bg-pink-500 text-white px-2 py-1 rounded text-[8px] font-bold uppercase tracking-wider shadow-sm w-fit animate-pulse">
+            <div className="bg-brand text-white px-2 py-1 rounded text-[8px] font-bold uppercase tracking-wider shadow-sm w-fit animate-pulse">
               {t("sale")}
             </div>
           )}
@@ -60,7 +60,7 @@ export const ProductCard = ({
       <div className="pt-8 text-left space-y-1">
         <div className="flex items-center justify-between">
           <h3
-            className={`text-slate-900 font-bold line-clamp-1 transition-colors group-hover:text-pink-600 ${
+            className={`text-slate-900 font-bold line-clamp-1 transition-colors group-hover:text-brand-hover ${
               isMM
                 ? "text-lg leading-relaxed font-myanmar"
                 : "text-sm tracking-tight"

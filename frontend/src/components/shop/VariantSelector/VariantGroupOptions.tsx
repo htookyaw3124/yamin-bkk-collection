@@ -50,7 +50,7 @@ export const VariantGroupOptions = ({ groups, lang, selectedVariant, onOptionSel
                       }}
                       className={`px-5 py-2.5 rounded-2xl border transition-all duration-300 flex items-center gap-3 text-[11px] font-bold tracking-tight select-none cursor-pointer ${
                         isSelected
-                          ? "border-slate-900 bg-slate-900 text-white shadow-xl shadow-slate-200/50 scale-105"
+                          ? "border-brand bg-brand text-white shadow-xl shadow-slate-200/50 scale-105"
                           : "border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white"
                       }`}
                     >

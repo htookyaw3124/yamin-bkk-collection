@@ -48,16 +48,16 @@ export const AdminLayout = ({
 
   const sidebarInner = (
     <>
-      <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
-        <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs font-semibold tracking-widest">
-          YA
+      <div className="flex items-center gap-3 pb-6 border-b border-slate-100/60">
+        <div className="h-10 w-10 rounded-full bg-pink-50 text-pink-500 flex items-center justify-center text-xs font-bold tracking-widest shadow-sm">
+          YS
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
-            Admin Panel
+          <p className="text-base font-bold text-slate-800">
+            My Shop
           </p>
-          <p className="text-base font-semibold text-slate-900">
-            TWIN Collection
+          <p className="text-[10px] text-slate-400 font-medium">
+            Dashboard
           </p>
         </div>
       </div>
@@ -71,10 +71,10 @@ export const AdminLayout = ({
               to={item.path}
               onClick={() => setDrawerOpen(false)}
               className={({ isActive }) =>
-                `group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
+                `group flex items-center gap-3 rounded-full px-5 py-3 text-sm font-bold transition-all duration-300 ${
                   isActive
-                    ? "bg-slate-900 text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-pink-100/50 text-pink-600"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                 }`
               }
             >
@@ -84,8 +84,8 @@ export const AdminLayout = ({
                     size={18}
                     className={`transition-colors ${
                       isActive
-                        ? "text-white"
-                        : "text-slate-400 group-hover:text-slate-700"
+                        ? "text-pink-500"
+                        : "text-slate-400 group-hover:text-slate-500"
                     }`}
                   />
                   <span>{item.label}</span>
@@ -106,18 +106,17 @@ export const AdminLayout = ({
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-8">
-        <div className="flex flex-col gap-8 md:flex-row">
-          <aside className="hidden md:block md:w-72 md:sticky md:top-8 self-start">
-            <div className="rounded-3xl border border-slate-200/60 bg-white/80 backdrop-blur-xl shadow-xl shadow-slate-200/40 p-6">
-              {sidebarInner}
-            </div>
-          </aside>
+    <div className="min-h-screen bg-admin-bg">
+      <div className="flex flex-col md:flex-row min-h-screen">
+        <aside className="hidden md:block md:w-64 bg-white border-r border-slate-100 flex-shrink-0">
+          <div className="p-6 sticky top-0 h-screen overflow-y-auto">
+            {sidebarInner}
+          </div>
+        </aside>
 
-          <main className="flex-1">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
-              <div className="flex items-center justify-between md:hidden">
+        <main className="flex-1 w-full max-w-[100vw] md:max-w-[calc(100vw-256px)] p-6 md:p-10">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-8">
+            <div className="flex items-center justify-between md:hidden w-full bg-white p-4 rounded-2xl shadow-sm mb-4">
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(true)}
@@ -127,29 +126,14 @@ export const AdminLayout = ({
                   <Menu size={16} />
                   Menu
                 </button>
-                <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                  Secure Access
+                <span className="rounded-full bg-pink-50 px-4 py-2 text-[10px] uppercase tracking-widest font-bold text-pink-500">
+                  Admin Active
                 </span>
               </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                  Overview
-                </p>
-                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
-                  Administration
-                </h1>
-                <p className="text-sm text-slate-500">
-                  Professional control center for content and operations.
-                </p>
-              </div>
-              <div className="hidden md:flex items-center gap-3">
-                <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                  Secure Access
-                </span>
-              </div>
+
             </div>
 
-            <div className="rounded-3xl border border-slate-200/60 bg-white/80 backdrop-blur-xl shadow-xl shadow-slate-200/40 p-6 md:p-10">
+            <div className="w-full">
               <Routes>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route
@@ -190,7 +174,6 @@ export const AdminLayout = ({
             </div>
           </main>
         </div>
-      </div>
 
       <div
         className={`fixed inset-0 z-40 md:hidden ${

@@ -231,7 +231,7 @@ export const VariantBuilder = ({
           <input
             type="number"
             step="0.01"
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 transition-all"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-4 focus:ring-brand/20 transition-all"
             placeholder="MMK"
             value={bulkPrice}
             onChange={(event) => setBulkPrice(event.target.value)}
@@ -243,7 +243,7 @@ export const VariantBuilder = ({
           </label>
           <input
             type="number"
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 transition-all"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-4 focus:ring-brand/20 transition-all"
             placeholder="0"
             value={bulkStock}
             onChange={(event) => setBulkStock(event.target.value)}
@@ -375,7 +375,7 @@ export const VariantBuilder = ({
         <button
           type="button"
           onClick={handleGenerate}
-          className="w-full md:w-auto bg-slate-900 text-white rounded-xl px-10 py-4 text-xs font-bold uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+          className="w-full md:w-auto bg-brand text-white rounded-full px-10 py-4 text-xs font-bold uppercase tracking-[0.2em] shadow-xl hover:bg-brand-hover transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50 btn-premium"
           disabled={totalCombos === 0}
         >
           Confirm & Create Variants
