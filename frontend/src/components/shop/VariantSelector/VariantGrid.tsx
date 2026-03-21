@@ -8,13 +8,18 @@ interface Props {
   onVariantSelect: (variantId: string) => void;
 }
 
-export const VariantGrid = ({ product, lang, selectedVariantId, onVariantSelect }: Props) => {
+export const VariantGrid = ({
+  product,
+  lang,
+  selectedVariantId,
+  onVariantSelect,
+}: Props) => {
   const isMM = lang === "mm";
 
   if (!product.variants || product.variants.length === 0) return null;
 
   return (
-    <div className="space-y-6 pt-8 border-t border-slate-100/60">
+    <div className="display-none space-y-6 pt-8 border-t border-slate-100/60">
       <p className="text-[9px] tracking-[0.3em] uppercase text-slate-400 font-black">
         {isMM ? "ရရှိ နိုင်သည့် အမျိုးအစား" : "Available Variants"}
       </p>
@@ -47,10 +52,14 @@ export const VariantGrid = ({ product, lang, selectedVariantId, onVariantSelect 
 
               <div className="space-y-2">
                 <div className="flex flex-col gap-0.5 min-h-[40px]">
-                  <p className={`text-xs font-bold leading-tight ${isSelected ? "text-white" : "text-slate-900"}`}>
+                  <p
+                    className={`text-xs font-bold leading-tight ${isSelected ? "text-white" : "text-slate-900"}`}
+                  >
                     {variantName}
                   </p>
-                  <p className={`text-[8px] tracking-wide font-medium ${isSelected ? "text-white/60" : "text-slate-400"}`}>
+                  <p
+                    className={`text-[8px] tracking-wide font-medium ${isSelected ? "text-white/60" : "text-slate-400"}`}
+                  >
                     {variantSku}
                   </p>
                 </div>
@@ -61,28 +70,41 @@ export const VariantGrid = ({ product, lang, selectedVariantId, onVariantSelect 
                       <span
                         key={idx}
                         className={`text-[8px] px-2 py-0.5 rounded-full flex items-center gap-1.5 ${
-                          isSelected ? "bg-white/10 text-white" : "bg-slate-100 text-slate-600"
+                          isSelected
+                            ? "bg-white/10 text-white"
+                            : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {option.color && (
                           <span
                             className={`w-2 h-2 rounded-full border shadow-sm ${
-                              isSelected ? "border-white/20" : "border-slate-200/50"
+                              isSelected
+                                ? "border-white/20"
+                                : "border-slate-200/50"
                             }`}
                             style={{ backgroundColor: option.color }}
                           />
                         )}
-                        {(isMM ? option.value_mm : option.value_en).substring(0, 5)}
+                        {(isMM ? option.value_mm : option.value_en).substring(
+                          0,
+                          5,
+                        )}
                       </span>
                     ))}
                   </div>
                 )}
 
-                <div className={`flex items-center justify-between pt-2 border-t mt-1 ${isSelected ? "border-white/10" : "border-slate-100"}`}>
-                  <p className={`text-xs font-black ${isSelected ? "text-white" : "text-slate-900"}`}>
+                <div
+                  className={`flex items-center justify-between pt-2 border-t mt-1 ${isSelected ? "border-white/10" : "border-slate-100"}`}
+                >
+                  <p
+                    className={`text-xs font-black ${isSelected ? "text-white" : "text-slate-900"}`}
+                  >
                     {displayPrice.toLocaleString()} {isMM ? "ကျပ်" : "MMK"}
                   </p>
-                  <p className={`text-[9px] font-bold ${isSelected ? "text-white/80" : (inStock ? "text-emerald-500" : "text-slate-300")}`}>
+                  <p
+                    className={`text-[9px] font-bold ${isSelected ? "text-white/80" : inStock ? "text-emerald-500" : "text-slate-300"}`}
+                  >
                     {inStock ? `${variant.stock}` : "Out"}
                   </p>
                 </div>

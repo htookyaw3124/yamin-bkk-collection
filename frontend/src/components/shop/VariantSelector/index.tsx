@@ -48,12 +48,12 @@ export const VariantSelector = ({
         onOptionSelect={onOptionSelect}
       />
 
-      {/* <VariantGrid
+      <VariantGrid
         product={product}
         lang={lang}
         selectedVariantId={selectedVariantId}
         onVariantSelect={handleVariantSelect}
-      /> */}
+      />
 
       {selectedVariant && (
         <SelectedVariantSummary
