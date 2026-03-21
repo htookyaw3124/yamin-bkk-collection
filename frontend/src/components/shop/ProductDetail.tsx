@@ -6,6 +6,7 @@ import {
   Globe,
   X,
   ArrowLeft,
+  Maximize2,
 } from "lucide-react";
 import type { Lang } from "../../types";
 import { getProductInStock, getCategoryLabel } from "../../utils/helpers";
@@ -31,6 +32,7 @@ export const ProductDetail = ({
   const { data: product, isLoading, error } = useGetProductQuery(productId);
   const { t } = useTranslation();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     null,
   );
@@ -158,11 +160,24 @@ export const ProductDetail = ({
               </div>
             )}
 
-            <img
-              src={displayImage}
-              alt={name}
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-            />
+            <button 
+              onClick={() => setIsLightboxOpen(true)}
+              className="w-full h-full relative cursor-zoom-in group/mainimg"
+            >
+              <img
+                src={displayImage}
+                alt={name}
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover/mainimg:scale-105"
+              />
+              <div className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-md rounded-xl text-white opacity-0 group-hover/mainimg:opacity-100 sm:group-hover/mainimg:opacity-100 transition-all duration-300 border border-white/20">
+                <Maximize2 size={18} />
+              </div>
+              
+              {/* Mobile Hint */}
+              <div className="absolute bottom-6 right-6 sm:hidden p-2.5 bg-black/20 backdrop-blur-md rounded-full text-white/80 border border-white/10">
+                <Maximize2 size={14} />
+              </div>
+            </button>
             
             {/* Gallery Navigation - Dots (Shown on Mobile or Non-Page) */}
             {allImages.length > 1 && (
@@ -287,6 +302,53 @@ export const ProductDetail = ({
           </div>
         </div>
       </div>
+
+      {/* LIGHTBOX MODAL */}
+      {isLightboxOpen && (
+        <div className="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center animate-in fade-in duration-300">
+          {/* Close Button */}
+          <button 
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-6 right-6 z-[210] p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl transition-all active:scale-95 group"
+          >
+            <X size={24} className="group-hover:rotate-90 transition-transform duration-300" />
+          </button>
+
+          {/* Main Zoomed Image */}
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+             <img 
+               src={displayImage} 
+               alt={name}
+               className="max-w-full max-h-full object-contain animate-in zoom-in-95 duration-500 ease-out"
+             />
+          </div>
+
+          {/* Navigation Controls */}
+          {allImages.length > 1 && (
+            <div className="absolute bottom-10 left-0 right-0 p-6 flex flex-col items-center gap-6">
+              <div className="flex gap-2.5 p-2.5 bg-white/10 backdrop-blur-2xl rounded-full shadow-2xl border border-white/10 max-w-[90vw] overflow-x-auto no-scrollbar">
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveImageIdx(idx);
+                    }}
+                    className={`shrink-0 w-12 h-12 rounded-full overflow-hidden border-2 transition-all duration-300 ${
+                      idx === activeImageIdx ? "border-white scale-110 shadow-lg shadow-white/20" : "border-transparent opacity-40 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={img.url} className="w-full h-full object-cover" alt="" />
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 bg-black/20 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/5">
+                {activeImageIdx + 1} / {allImages.length}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

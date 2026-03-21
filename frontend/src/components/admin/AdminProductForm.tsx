@@ -1,39 +1,52 @@
 import { useState, useEffect, useRef } from "react";
-import { useCreateProductMutation } from "../../lib/api";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import {
+  useCreateProductMutation,
+  useUpdateProductMutation,
+} from "../../lib/api";
+import { ArrowLeft, Upload, Trash2, X } from "lucide-react";
 import type {
   Lang,
   AdminFormState,
   Category,
   VariantDraft,
-  VariantOptionDraft,
   Audience,
   Brand,
+  Product,
 } from "../../types";
 import { VariantBuilder } from "./VariantBuilder";
 
 interface AdminProductFormProps {
   onCancel: () => void;
+  onSuccess?: () => void;
   lang: Lang;
   categories: Category[];
   brands: Brand[];
   categoriesLoading?: boolean;
   categoriesError?: string | null;
+  initialData?: Product;
 }
 
 export const AdminProductForm = ({
   onCancel,
+  onSuccess,
   lang,
   categories,
   brands,
-  categoriesLoading = false,
-  categoriesError = null,
+  initialData,
 }: AdminProductFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isMM = lang === "mm";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  
   const [baseImageFiles, setBaseImageFiles] = useState<File[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [bulkPrice, setBulkPrice] = useState("");
+  const [bulkStock, setBulkStock] = useState("");
+  
   const [createProduct] = useCreateProductMutation();
+  const [updateProduct] = useUpdateProductMutation();
+
+  const isEditing = !!initialData;
 
   const makeId = () =>
     `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -53,26 +66,63 @@ export const AdminProductForm = ({
     variants: [],
     variantGroups: [],
   });
-  const inputBase =
-    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20";
-  const textareaBase =
-    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 resize-none";
-  const selectBase = `${inputBase} pr-8`;
-  const labelBase =
-    "block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2";
-  const sectionCard = "rounded-2xl border border-slate-200 bg-white p-6 shadow-sm";
 
   useEffect(() => {
-    if (categoriesLoading || !categories.length) return;
-    setFormData((current) =>
-      current.categoryId
-        ? current
-        : {
-            ...current,
-            categoryId: categories[0].id,
-          },
-    );
-  }, [categories, categoriesLoading]);
+    if (initialData) {
+      const categoryId =
+        typeof initialData.category === "string"
+          ? initialData.category
+          : initialData.category.id;
+          
+      setFormData({
+        name_en: initialData.name_en ?? "",
+        name_mm: initialData.name_mm ?? "",
+        description_en: initialData.description_en ?? "",
+        description_mm: initialData.description_mm ?? "",
+        price: initialData.price?.toString() ?? "",
+        stock: initialData.stock?.toString() ?? "0",
+        brandId: initialData.brandId ?? initialData.brand?.id ?? "",
+        categoryId,
+        audience: initialData.audience ?? "all",
+        videoUrl: initialData.videoUrl ?? "",
+        imageUrl: "", // Handled via existing images in editing state
+        variants:
+          initialData.variants?.map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            name_en: v.name_en,
+            name_mm: v.name_mm,
+            priceOverride: v.priceOverride?.toString() ?? "",
+            stock: v.stock?.toString() ?? "0",
+            options:
+              v.options?.map((opt) => ({
+                id: opt.id,
+                type: opt.type,
+                value_en: opt.value_en,
+                value_mm: opt.value_mm,
+                color: opt.color,
+                imageUrl: opt.imageUrl,
+              })) ?? [],
+            imageFiles: [],
+          })) ?? [],
+        variantGroups: Array.isArray(initialData.variantGroups)
+          ? initialData.variantGroups
+          : [],
+      });
+    } else if (categories.length && !formData.categoryId) {
+      setFormData((current) => ({
+        ...current,
+        categoryId: categories[0].id,
+      }));
+    }
+  }, [initialData, categories, formData.categoryId]);
+
+  // STYLES
+  const inputBase =
+    "w-full rounded-xl border border-transparent bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:bg-white focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all placeholder:text-slate-400";
+  const textareaBase = `${inputBase} resize-none min-h-[120px]`;
+  const labelBase = "block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2";
+  const cardBase = "bg-white rounded-3xl p-6 md:p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/50";
 
   const addVariant = () => {
     setFormData((current) => ({
@@ -80,14 +130,14 @@ export const AdminProductForm = ({
       variants: [
         ...current.variants,
         {
-          id: makeId(),
-          sku: "",
-          name_en: "",
-          name_mm: "",
-          priceOverride: "",
-          stock: "",
-          options: [],
-          imageFiles: [],
+           id: makeId(),
+           sku: "",
+           name_en: "",
+           name_mm: "",
+           priceOverride: "",
+           stock: "",
+           options: [],
+           imageFiles: [],
         },
       ],
     }));
@@ -113,61 +163,7 @@ export const AdminProductForm = ({
     }));
   };
 
-  const addVariantOption = (variantId: string) => {
-    setFormData((current) => ({
-      ...current,
-      variants: current.variants.map((variant) =>
-        variant.id === variantId
-          ? {
-              ...variant,
-              options: [
-                ...variant.options,
-                { id: makeId(), type: "", value_en: "", value_mm: "" },
-              ],
-            }
-          : variant,
-      ),
-    }));
-  };
-
-  const updateVariantOption = (
-    variantId: string,
-    optionId: string,
-    field: keyof Omit<VariantOptionDraft, "id">,
-    value: string,
-  ) => {
-    setFormData((current) => ({
-      ...current,
-      variants: current.variants.map((variant) =>
-        variant.id === variantId
-          ? {
-              ...variant,
-              options: variant.options.map((option) =>
-                option.id === optionId ? { ...option, [field]: value } : option,
-              ),
-            }
-          : variant,
-      ),
-    }));
-  };
-
-  const removeVariantOption = (variantId: string, optionId: string) => {
-    setFormData((current) => ({
-      ...current,
-      variants: current.variants.map((variant) =>
-        variant.id === variantId
-          ? {
-              ...variant,
-              options: variant.options.filter(
-                (option) => option.id !== optionId,
-              ),
-            }
-          : variant,
-      ),
-    }));
-  };
-
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBaseImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
       const newFiles = Array.from(files);
@@ -180,130 +176,100 @@ export const AdminProductForm = ({
       current.filter((_, index) => index !== indexToRemove)
     );
   };
-
-  const handleVariantImageSelect = (
-    variantId: string,
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const files = event.target.files;
-    if (files) {
-      const newFiles = Array.from(files);
-      setFormData((current) => ({
-        ...current,
-        variants: current.variants.map((v) =>
-          v.id === variantId
-            ? { ...v, imageFiles: [...(v.imageFiles || []), ...newFiles] }
-            : v,
-        ),
-      }));
-    }
+  
+  const handleRemoveExistingImage = (url: string) => {
+    if (!window.confirm(isMM ? "ဖျက်ရန် သေချာပါသလား?" : "Are you sure you want to delete this image?")) return;
+    setImagesToDelete(curr => [...curr, url]);
   };
 
-  const removeVariantImage = (variantId: string, fileIndex: number) => {
-    setFormData((current) => ({
-      ...current,
-      variants: current.variants.map((v) =>
-        v.id === variantId
-          ? {
-              ...v,
-              imageFiles: (v.imageFiles || []).filter(
-                (_, index) => index !== fileIndex,
-              ),
-            }
-          : v,
-      ),
-    }));
-  };
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (isSubmitting) return;
 
-    if (isSubmitting) return;
-
-    const baseFiles = baseImageFiles;
+    let hasAnyImages = baseImageFiles.length > 0 || (initialData?.images?.filter(img => !imagesToDelete.includes(img.url)).length ?? 0) > 0;
     
-    let hasAnyImages = baseFiles.length > 0;
+    if (!isEditing && formData.imageUrl) {
+        hasAnyImages = true;
+    }
+    
     formData.variants.forEach(variant => {
          if (variant.imageFiles && variant.imageFiles.length > 0) hasAnyImages = true;
     });
 
     if (!hasAnyImages) {
-      alert(
-        isMM
-          ? "ဓာတ်ပုံတစ်ပုံအနည်းဆုံး တင်ပေးပါ"
-          : "Please attach at least one product image.",
-      );
-      setIsSubmitting(false);
+      alert(isMM ? "ဓာတ်ပုံတစ်ပုံအနည်းဆုံး တင်ပေးပါ" : "Please attach at least one product image.");
       return;
     }
 
-    setIsSubmitting(true);
-
-    const price = Number.parseFloat(formData.price);
+    const price = Number.parseFloat(formData.price) || 0;
     const normalizedCategoryId = formData.categoryId || categories[0]?.id;
     const normalizedAudience = formData.audience ?? "all";
     const normalizedStock = Number.parseInt(formData.stock || "0", 10);
 
     if (!normalizedCategoryId) {
       alert(isMM ? "Category မရှိသေးပါ" : "Please select a category.");
-      setIsSubmitting(false);
       return;
     }
 
+    setIsSubmitting(true);
+    
     const validVariants = formData.variants.filter(
       (variant) => variant.sku && variant.name_en && variant.name_mm,
     );
     
-    const allFilesToUpload: File[] = [...baseFiles];
+    const allFilesToUpload: File[] = [...baseImageFiles];
     const variantImageMap: Record<string, number[]> = {};
+    const optionImageMap: Record<string, number[]> = {};
+    
+    // Track unique files to avoid duplicate uploads
+    const fileToIndexMap = new Map<File, number>();
+    baseImageFiles.forEach((file, idx) => fileToIndexMap.set(file, idx));
 
     validVariants.forEach((variant, vIndex) => {
+       // Check variant-level images (legacy or direct)
        if (variant.imageFiles && variant.imageFiles.length > 0) {
            const indices: number[] = [];
            variant.imageFiles.forEach(file => {
-               indices.push(allFilesToUpload.length);
-               allFilesToUpload.push(file);
+               let idx = fileToIndexMap.get(file);
+               if (idx === undefined) {
+                   idx = allFilesToUpload.length;
+                   allFilesToUpload.push(file);
+                   fileToIndexMap.set(file, idx);
+               }
+               indices.push(idx);
            });
            variantImageMap[vIndex.toString()] = indices;
        }
+
+       // Check option-level images (the new way)
+       variant.options.forEach((option, oIndex) => {
+          if (option.imageFile) {
+            let idx = fileToIndexMap.get(option.imageFile);
+            if (idx === undefined) {
+              idx = allFilesToUpload.length;
+              allFilesToUpload.push(option.imageFile);
+              fileToIndexMap.set(option.imageFile, idx);
+            }
+            optionImageMap[`${vIndex}-${oIndex}`] = [idx];
+          }
+       });
     });
 
-    const optionImageMap: Record<string, number[]> = {};
-    const fileToIndexMap = new Map<File, number>();
-
     const variantPayload = validVariants.length
-      ? validVariants
-          .map((variant, vIndex) => ({
-            sku: variant.sku,
-            name_en: variant.name_en,
-            name_mm: variant.name_mm,
-            priceOverride: variant.priceOverride
-              ? Number(variant.priceOverride)
-              : undefined,
-            stock: Number(variant.stock) || 0,
-            options: variant.options
-              .filter(
-                (option) => option.type && option.value_en && option.value_mm,
-              )
-              .map((option, oIndex) => {
-                if (option.imageFile) {
-                  let fileIdx = fileToIndexMap.get(option.imageFile);
-                  if (fileIdx === undefined) {
-                    fileIdx = allFilesToUpload.length;
-                    fileToIndexMap.set(option.imageFile, fileIdx);
-                    allFilesToUpload.push(option.imageFile);
-                  }
-                  optionImageMap[`${vIndex}-${oIndex}`] = [fileIdx];
-                }
-                return {
-                  type: option.type,
-                  value_en: option.value_en,
-                  value_mm: option.value_mm,
-                  color: option.color,
-                  imageUrl: option.imageUrl,
-                };
-              }),
+      ? validVariants.map((variant) => ({
+             id: variant.id.length > 20 ? variant.id : undefined,
+             sku: variant.sku,
+             name_en: variant.name_en,
+             name_mm: variant.name_mm,
+             priceOverride: variant.priceOverride ? Number(variant.priceOverride) : undefined,
+             stock: Number(variant.stock) || 0,
+             options: variant.options.map((option) => ({
+                type: option.type,
+                value_en: option.value_en,
+                value_mm: option.value_mm,
+                color: option.color,
+                imageUrl: option.imageUrl,
+             })),
           }))
       : undefined;
 
@@ -320,650 +286,276 @@ export const AdminProductForm = ({
         formPayload.append("brandId", formData.brandId);
       }
       formPayload.append("audience", normalizedAudience);
-      formPayload.append(
-        "variantGroups",
-        JSON.stringify(formData.variantGroups ?? []),
-      );
+      formPayload.append("variantGroups", JSON.stringify(formData.variantGroups ?? []));
+      
       if (variantPayload) {
         formPayload.append("variants", JSON.stringify(variantPayload));
-        if (Object.keys(variantImageMap).length > 0) {
-           formPayload.append("variantImageMap", JSON.stringify(variantImageMap));
-        }
-        if (Object.keys(optionImageMap).length > 0) {
-           formPayload.append("optionImageMap", JSON.stringify(optionImageMap));
-        }
+        if (Object.keys(variantImageMap).length > 0) formPayload.append("variantImageMap", JSON.stringify(variantImageMap));
+        if (Object.keys(optionImageMap).length > 0) formPayload.append("optionImageMap", JSON.stringify(optionImageMap));
       }
-      if (formData.videoUrl.trim()) {
-        formPayload.append("videoUrl", formData.videoUrl.trim());
-      }
+      
+      if (formData.videoUrl.trim()) formPayload.append("videoUrl", formData.videoUrl.trim());
+      if (isEditing && imagesToDelete.length > 0) formPayload.append("imagesToDelete", JSON.stringify(imagesToDelete));
+      
       allFilesToUpload.forEach((file) => formPayload.append("images", file));
 
-      await createProduct(formPayload).unwrap();
-      setFormData({
-        name_en: "",
-        name_mm: "",
-        description_en: "",
-        description_mm: "",
-        price: "",
-        stock: "",
-        brandId: "",
-        categoryId: categories[0]?.id ?? "",
-        audience: "all",
-        imageUrl: "",
-        videoUrl: "",
-        variants: [],
-        variantGroups: [],
-      });
+      if (isEditing) {
+         await updateProduct({ id: initialData.id, payload: formPayload }).unwrap();
+      } else {
+         await createProduct(formPayload).unwrap();
+      }
+      
+      if (onSuccess) onSuccess();
+      else onCancel();
+      
+    } catch (e) {
+      console.error(e);
+      alert(isMM ? "လုပ်ဆောင်ချက် မအောင်မြင်ပါ။" : "Action failed. Check console for details.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-10 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-10">
-        <button
-          onClick={onCancel}
-          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors text-xs uppercase tracking-widest font-bold"
-        >
-          <ArrowLeft size={16} /> {isMM ? "ပြန်သွားရန်" : "Back"}
-        </button>
-        <div className="text-right">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
-            Product Setup
-          </p>
-          <h2 className="text-2xl tracking-[0.3em] font-light uppercase">
-            {isMM ? "ပစ္စည်းအသစ်ထည့်ရန်" : "Add New Product"}
-          </h2>
+    <div className="bg-slate-50/50 min-h-[50vh] animate-in fade-in zoom-in-[0.98] duration-300">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 py-4 px-6 md:px-8 mb-8 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-4">
+          <button onClick={onCancel} className="h-10 w-10 bg-slate-50 border border-slate-100 text-slate-500 hover:text-slate-900 rounded-full flex items-center justify-center transition-all hover:bg-slate-100">
+            <ArrowLeft size={18} />
+          </button>
+          <div>
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-slate-400">
+               {isEditing ? "Product Management" : "Back to Products"}
+            </p>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+               {isEditing ? (isMM ? "ပစ္စည်းအချက်အလက်ပြင်ရန်" : "Edit Product") : (isMM ? "ပစ္စည်းအသစ်ထည့်ရန်" : "Add New Product")}
+            </h2>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={onCancel} className="hidden md:block px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-colors">
+             Cancel
+          </button>
+          <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest bg-brand text-white hover:bg-brand-hover shadow-lg shadow-brand/20 transition-all btn-premium disabled:opacity-50">
+            {isSubmitting ? "Saving..." : (isEditing ? "Save Changes" : "Create Product")}
+          </button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-10">
-        {/* Language Split Sections */}
-        <div className={sectionCard}>
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-6">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                Product Details
-              </p>
-              <h3 className="text-base font-semibold text-slate-900">
-                English and Burmese Information
-              </h3>
-            </div>
-            <span className="text-xs uppercase tracking-[0.3em] text-slate-400">
-              Both required
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-4">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                English
-              </p>
-              <div>
-                <label className={labelBase}>Product Name</label>
-                <input
-                  required
-                  placeholder="Product Name"
-                  className={inputBase}
-                  value={formData.name_en}
-                  onChange={(event) =>
-                    setFormData({ ...formData, name_en: event.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <label className={labelBase}>Description</label>
-                <textarea
-                  placeholder="Description"
-                  rows={4}
-                  className={textareaBase}
-                  value={formData.description_en}
-                  onChange={(event) =>
-                    setFormData({
-                      ...formData,
-                      description_en: event.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-4">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                Burmese
-              </p>
-              <div>
-                <label className={labelBase}>
-                  {isMM ? "Product Name (Burmese)" : "Product Name (Burmese)"}
-                </label>
-                <input
-                  required
-                  placeholder="Product Name (Burmese)"
-                  className={`${inputBase} font-myanmar`}
-                  value={formData.name_mm}
-                  onChange={(event) =>
-                    setFormData({ ...formData, name_mm: event.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <label className={labelBase}>
-                  {isMM ? "Description (Burmese)" : "Description (Burmese)"}
-                </label>
-                <textarea
-                  placeholder="Description (Burmese)"
-                  rows={4}
-                  className={`${textareaBase} font-myanmar`}
-                  value={formData.description_mm}
-                  onChange={(event) =>
-                    setFormData({
-                      ...formData,
-                      description_mm: event.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* Generic Info */}
-        <div className={sectionCard}>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                Pricing & Inventory
-              </p>
-              <h3 className="text-base font-semibold text-slate-900">
-                Core Product Settings
-              </h3>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                Pricing
-              </h4>
-              <div>
-                <label className={labelBase}>Price (MMK)</label>
-                <input
-                  required
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  className={inputBase}
-                  value={formData.price}
-                  onChange={(event) =>
-                    setFormData({ ...formData, price: event.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <label className={labelBase}>
-                  {isMM ? "Stock" : "Stock"}
-                </label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  className={inputBase}
-                  value={formData.stock}
-                  onChange={(event) =>
-                    setFormData({ ...formData, stock: event.target.value })
-                  }
-                />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h4 className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                Classification
-              </h4>
-              <div>
-                <label className={labelBase}>Brand</label>
-                <select
-                  className={selectBase}
-                  value={formData.brandId}
-                  onChange={(event) =>
-                    setFormData({ ...formData, brandId: event.target.value })
-                  }
-                >
-                  <option value="">{isMM ? "အမှတ်တံဆိပ် မရှိပါ" : "No Brand"}</option>
-                  {brands.map((brand) => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={labelBase}>Audience</label>
-                <select
-                  className={selectBase}
-                  value={formData.audience}
-                  onChange={(event) =>
-                    setFormData({
-                      ...formData,
-                      audience: event.target.value as Audience,
-                    })
-                  }
-                >
-                  <option value="all">{isMM ? "All" : "All"}</option>
-                  <option value="man">{isMM ? "Man" : "Man"}</option>
-                  <option value="woman">{isMM ? "Woman" : "Woman"}</option>
-                  <option value="child">{isMM ? "Child" : "Child"}</option>
-                </select>
-              </div>
-              <div>
-                <label className={labelBase}>Category</label>
-                <select
-                  className={selectBase}
-                  value={formData.categoryId}
-                  onChange={(event) =>
-                    setFormData({
-                      ...formData,
-                      categoryId: event.target.value,
-                    })
-                  }
-                  disabled={categoriesLoading || !categories.length}
-                >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {isMM ? category.name_mm : category.name_en}
-                    </option>
-                  ))}
-                </select>
-                {categoriesLoading && (
-                  <p className="text-xs text-slate-400 mt-2">
-                    {isMM
-                      ? "Loading categories..."
-                      : "Loading categories..."}
-                  </p>
-                )}
-                {!categoriesLoading && !categories.length && (
-                  <p className="text-xs text-red-500 mt-2">
-                    {isMM
-                      ? "No categories available. Please seed categories first."
-                      : "No categories available. Please seed categories first."}
-                  </p>
-                )}
-                {categoriesError && (
-                  <p className="text-xs text-red-500 mt-2">{categoriesError}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* Image / Links */}
-        <div className={sectionCard}>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                Media
-              </p>
-              <h3 className="text-base font-semibold text-slate-900">
-                Images and Video
-              </h3>
-            </div>
-            <span className="text-xs uppercase tracking-[0.3em] text-slate-400">
-              Images required
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div
-              className="border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer group relative"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="text-slate-300 group-hover:text-slate-900 mb-4 transition-colors" />
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-                {isMM ? "Click to Upload Images" : "Click to Upload Images"}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-2">
-                {isMM ? "JPEG/PNG up to 5MB" : "JPEG/PNG up to 5MB"}
-              </p>
-              {baseImageFiles.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2 justify-center w-full" onClick={(e) => e.stopPropagation()}>
-                  {baseImageFiles.map((file, idx) => (
-                    <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden shadow-sm group border border-slate-200 bg-white">
-                      <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        className="absolute top-1 right-1 bg-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                        onClick={() => removeBaseImage(idx)}
-                      >
-                        <X size={12} className="text-red-500" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(event) => {
-                  handleImageSelect(event);
-                  event.stopPropagation();
-                }}
-              />
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className={labelBase}>
-                  {isMM ? "Cloudinary Image URL (Optional)" : "Cloudinary Image URL (Optional)"}
-                </label>
-                <input
-                  type="text"
-                  placeholder={
-                    isMM
-                      ? "Paste Cloudinary URL"
-                      : "Paste Cloudinary URL"
-                  }
-                  className={inputBase}
-                  value={formData.imageUrl}
-                  onChange={(event) =>
-                    setFormData({ ...formData, imageUrl: event.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <label className={labelBase}>
-                  {isMM ? "Video Link (Optional)" : "Video Link (Optional)"}
-                </label>
-                <input
-                  type="url"
-                  placeholder={
-                    isMM
-                      ? "YouTube or TikTok URL"
-                      : "YouTube or TikTok URL"
-                  }
-                  className={inputBase}
-                  value={formData.videoUrl}
-                  onChange={(event) =>
-                    setFormData({ ...formData, videoUrl: event.target.value })
-                  }
-                />
-                <p className="text-[10px] text-slate-400 mt-2">
-                  {isMM
-                    ? "Paste a YouTube or TikTok URL to embed a product video"
-                    : "Paste a YouTube or TikTok URL to embed a product video"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <VariantBuilder
-          variantGroups={formData.variantGroups}
-          onChangeGroups={(groups) =>
-            setFormData({ ...formData, variantGroups: groups })
-          }
-          onGenerate={(variants) =>
-            setFormData({ ...formData, variants })
-          }
-          makeId={makeId}
-        />
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-slate-400 border-b pb-2 flex-1">
-              {isMM ? "အမျိုးမျိုး အရွယ်အစား & အရောင်" : "Product Variants"}
-            </h3>
-            <button
-              type="button"
-              onClick={addVariant}
-              className="ml-4 px-4 py-2 text-xs font-semibold tracking-[0.2em] uppercase border border-slate-200 rounded-full hover:border-slate-900 transition-colors"
-            >
-              {isMM ? "Variant ထည့်ရန်" : "Add Variant"}
-            </button>
-          </div>
-
-          {formData.variants.length === 0 ? (
-            <p className="text-xs text-slate-400">
-              {isMM
-                ? 'Variant များ မရှိသေးပါ။ ထည့်သွင်းချင်ပါက "Add Variant" ကိုနှိပ်ပါ။'
-                : "No variants yet. Click “Add Variant” to define size/color combinations."}
-            </p>
-          ) : (
-            <div className="space-y-6">
-              {formData.variants.map((variant, index) => (
-                <div
-                  key={variant.id}
-                  className="border border-slate-100 rounded-2xl p-6 shadow-sm"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                      {isMM ? `Variant ${index + 1}` : `Variant ${index + 1}`}
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={() => removeVariant(variant.id)}
-                      className="text-slate-300 hover:text-red-500 transition-colors"
-                    >
-                      <X size={16} />
-                    </button>
+      <div className="px-4 md:px-8 max-w-7xl mx-auto pb-24">
+         <form id="product-form" onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 items-start">
+            
+            {/* LEFT COLUMN - MAIN DETAILS */}
+            <div className="flex-1 w-full space-y-8">
+               {/* BASIC INFO */}
+               <div className={cardBase}>
+                  <div className="mb-6">
+                     <h3 className="text-base font-extrabold text-slate-900 tracking-tight">{isMM ? "အခြေခံ အချက်အလက်" : "Basic Information"}</h3>
+                     <p className="text-xs text-slate-500 mt-1">{isMM ? "အမည်နှင့် အကြောင်းအရာများ" : "Product name and description in both languages."}</p>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input
-                      required
-                      placeholder="SKU"
-                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
-                      value={variant.sku}
-                      onChange={(event) =>
-                        updateVariantField(
-                          variant.id,
-                          "sku",
-                          event.target.value,
-                        )
-                      }
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder={
-                        isMM ? "စျေးနှုန်း (အကွာအဝေး)" : "Price Override"
-                      }
-                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
-                      value={variant.priceOverride}
-                      onChange={(event) =>
-                        updateVariantField(
-                          variant.id,
-                          "priceOverride",
-                          event.target.value,
-                        )
-                      }
-                    />
-                    <input
-                      type="number"
-                      placeholder={isMM ? "စာရင်းရှိ ပမာဏ" : "Variant Stock"}
-                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
-                      value={variant.stock}
-                      onChange={(event) =>
-                        updateVariantField(
-                          variant.id,
-                          "stock",
-                          event.target.value,
-                        )
-                      }
-                    />
-                  </div>
-
-                  <div className="mt-4 border border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors">
-                     <p className="text-[10px] tracking-widest uppercase font-bold text-slate-400 mb-2">
-                        {isMM ? "Variant ပုံများ" : "Variant Images"}
-                     </p>
-                     
-                     {variant.imageFiles && variant.imageFiles.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-4 justify-center">
-                           {variant.imageFiles.map((file, idx) => (
-                              <div key={idx} className="relative w-16 h-16 rounded overflow-hidden shadow-sm group border border-slate-200">
-                                 <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
-                                 <button
-                                     type="button"
-                                     className="absolute top-1 right-1 bg-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                                     onClick={() => removeVariantImage(variant.id, idx)}
-                                 >
-                                     <X size={12} className="text-red-500" />
-                                 </button>
-                              </div>
-                           ))}
-                        </div>
-                     )}
-
-                     <div className="relative group cursor-pointer inline-flex flex-col items-center">
-                        <Upload size={16} className="text-slate-300 mb-1 group-hover:text-pink-500 transition-colors" />
-                        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold group-hover:text-pink-600 transition-colors">
-                           {isMM ? "ဓာတ်ပုံထည့်ရန်" : "Add Images"}
-                        </span>
-                        <input
-                           type="file"
-                           accept="image/*"
-                           multiple
-                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                           onChange={(e) => handleVariantImageSelect(variant.id, e)}
-                        />
+                  
+                  <div className="space-y-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div>
+                           <label className={labelBase}>Name (English) *</label>
+                           <input required placeholder="E.g. Summer Floral Dress" className={inputBase} value={formData.name_en} onChange={(e) => setFormData({...formData, name_en: e.target.value})} />
+                         </div>
+                         <div>
+                           <label className={labelBase}>Name (Burmese) *</label>
+                           <input required placeholder="E.g. နွေရာသီ ပန်းပွင့်ဂါဝန်" className={`${inputBase} font-myanmar`} value={formData.name_mm} onChange={(e) => setFormData({...formData, name_mm: e.target.value})} />
+                         </div>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div>
+                           <label className={labelBase}>Description (English)</label>
+                           <textarea placeholder="Write a detailed description..." className={textareaBase} value={formData.description_en} onChange={(e) => setFormData({...formData, description_en: e.target.value})} />
+                         </div>
+                         <div>
+                           <label className={labelBase}>Description (Burmese)</label>
+                           <textarea placeholder="အကြောင်းအရာ ရေးရန်..." className={`${textareaBase} font-myanmar`} value={formData.description_mm} onChange={(e) => setFormData({...formData, description_mm: e.target.value})} />
+                         </div>
                      </div>
                   </div>
+               </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <input
-                      placeholder={
-                        isMM ? "အမည် (English)" : "Variant Name (English)"
-                      }
-                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
-                      value={variant.name_en}
-                      onChange={(event) =>
-                        updateVariantField(
-                          variant.id,
-                          "name_en",
-                          event.target.value,
-                        )
-                      }
-                    />
-                    <input
-                      placeholder={
-                        isMM ? "အမည် (မြန်မာ)" : "Variant Name (Burmese)"
-                      }
-                      className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand font-myanmar"
-                      value={variant.name_mm}
-                      onChange={(event) =>
-                        updateVariantField(
-                          variant.id,
-                          "name_mm",
-                          event.target.value,
-                        )
-                      }
-                    />
+               {/* MEDIA */}
+               <div className={cardBase}>
+                  <div className="mb-6 flex items-center justify-between">
+                     <div>
+                        <h3 className="text-base font-extrabold text-slate-900 tracking-tight">{isMM ? "ဓာတ်ပုံများ" : "Media"}</h3>
+                        <p className="text-xs text-slate-500 mt-1">{isMM ? "ပစ္စည်းပုံများ တင်ပါ" : "Upload product images."}</p>
+                     </div>
+                     <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-pink-500 bg-pink-50 px-3 py-1 rounded-full">Required</span>
                   </div>
+                  
+                  <div 
+                     className="border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer group"
+                     onClick={() => fileInputRef.current?.click()}
+                  >
+                     <Upload className="text-slate-300 group-hover:text-slate-500 mb-4 transition-colors" size={32} />
+                     <p className="text-sm font-bold text-slate-700 mb-1">{isMM ? "ဓာတ်ပုံများ ဆွဲထည့်ပါ သို့မဟုတ် ရွေးချယ်ပါ" : "Click to Upload Images"}</p>
+                     <p className="text-[10px] tracking-widest uppercase font-bold text-slate-400">JPEG, PNG up to 5MB</p>
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handleBaseImageSelect(e); e.stopPropagation(); }} />
 
-                  <div className="mt-6 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] tracking-[0.2em] uppercase text-slate-400 font-bold">
-                        {isMM ? "ရွေးချယ်စရာ Option" : "Variant Options"}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => addVariantOption(variant.id)}
-                        className="text-xs uppercase tracking-[0.2em] text-pink-600"
-                      >
-                        {isMM ? "Option ထည့်ရန်" : "Add Option"}
-                      </button>
-                    </div>
-                    {variant.options.length === 0 ? (
-                      <p className="text-xs text-slate-400">
-                        {isMM
-                          ? "ဒီ Variant အတွက် option မရှိသေးပါ။"
-                          : "No options yet for this variant."}
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {variant.options.map((option) => (
-                          <div
-                            key={option.id}
-                            className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center"
-                          >
-                            <input
-                              placeholder={
-                                isMM
-                                  ? "အမျိုးအစား (size/color)"
-                                  : "Type (size/color)"
-                              }
-                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
-                              value={option.type}
-                              onChange={(event) =>
-                                updateVariantOption(
-                                  variant.id,
-                                  option.id,
-                                  "type",
-                                  event.target.value,
-                                )
-                              }
-                            />
-                            <input
-                              placeholder={
-                                isMM ? "တန်ဖိုး (English)" : "Value (English)"
-                              }
-                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand"
-                              value={option.value_en}
-                              onChange={(event) =>
-                                updateVariantOption(
-                                  variant.id,
-                                  option.id,
-                                  "value_en",
-                                  event.target.value,
-                                )
-                              }
-                            />
-                            <input
-                              placeholder={
-                                isMM ? "တန်ဖိုး (မြန်မာ)" : "Value (Burmese)"
-                              }
-                              className="border-b border-slate-200 py-2 text-sm outline-none focus:border-brand font-myanmar"
-                              value={option.value_mm}
-                              onChange={(event) =>
-                                updateVariantOption(
-                                  variant.id,
-                                  option.id,
-                                  "value_mm",
-                                  event.target.value,
-                                )
-                              }
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
-                                removeVariantOption(variant.id, option.id)
-                              }
-                              className="text-slate-300 hover:text-red-500 transition-colors justify-self-end"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
+                  {/* Image Previews */}
+                  {(baseImageFiles.length > 0 || (isEditing && initialData?.images && initialData.images.length > 0)) && (
+                     <div className="mt-6 flex flex-wrap gap-4">
+                        {isEditing && initialData?.images?.filter(img => !imagesToDelete.includes(img.url)).map((img, idx) => (
+                           <div key={`existing-${idx}`} className="relative w-24 h-24 rounded-2xl overflow-hidden shadow-sm border border-slate-200 group/img">
+                              <img src={img.url} className="w-full h-full object-cover" />
+                              <button type="button" className="absolute top-2 right-2 bg-white/90 backdrop-blur rounded-full p-1.5 opacity-0 group-hover/img:opacity-100 transition-all hover:bg-red-50" onClick={() => handleRemoveExistingImage(img.url)}>
+                                 <Trash2 size={14} className="text-red-500" />
+                              </button>
+                           </div>
                         ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                        {baseImageFiles.map((file, idx) => (
+                           <div key={`new-${idx}`} className="relative w-24 h-24 rounded-2xl overflow-hidden shadow-sm border border-slate-200 group/img">
+                              <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
+                              <button type="button" className="absolute top-2 right-2 bg-white/90 backdrop-blur rounded-full p-1.5 opacity-0 group-hover/img:opacity-100 transition-all hover:bg-red-50" onClick={() => removeBaseImage(idx)}>
+                                 <X size={14} className="text-red-500" />
+                              </button>
+                              <span className="absolute bottom-0 left-0 right-0 bg-brand/90 text-white text-[9px] font-bold text-center py-1 uppercase tracking-widest backdrop-blur">New</span>
+                           </div>
+                        ))}
+                     </div>
+                  )}
 
-        <button
-          type="submit"
-          className="w-full bg-brand text-white py-4 rounded-full text-xs font-bold uppercase tracking-[0.3em] hover:bg-brand-hover transition-all shadow-xl btn-premium"
-          disabled={isSubmitting}
-        >
-          {isSubmitting
-            ? isMM
-              ? "Uploading…"
-              : "Uploading…"
-            : isMM
-              ? "သိမ်းဆည်းမည်"
-              : "Save Product"}
-        </button>
-      </form>
+                  {!isEditing && (
+                     <div className="mt-6">
+                        <label className={labelBase}>Or provide Image URL (Optional)</label>
+                        <input type="text" placeholder="https://..." className={inputBase} value={formData.imageUrl} onChange={(e) => setFormData({...formData, imageUrl: e.target.value})} />
+                     </div>
+                  )}
+               </div>
+
+               {/* VARIANTS BUILDER */}
+               <VariantBuilder
+                  variantGroups={formData.variantGroups}
+                  variants={formData.variants}
+                  onChangeGroups={(groups) => setFormData({ ...formData, variantGroups: groups })}
+                  onGenerate={(variants) => setFormData({ ...formData, variants })}
+                  makeId={makeId}
+                  bulkPrice={bulkPrice}
+                  bulkStock={bulkStock}
+                  setBulkPrice={setBulkPrice}
+                  setBulkStock={setBulkStock}
+               />
+
+               {/* RENDERED VARIANTS */}
+               {formData.variants.length > 0 && (
+                  <div className={cardBase}>
+                     <div className="flex items-center justify-between mb-6">
+                        <div>
+                           <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Active Variants</h3>
+                           <p className="text-xs text-slate-500 mt-1">{formData.variants.length} combinations generated.</p>
+                        </div>
+                        <button type="button" onClick={addVariant} className="px-4 py-2 text-[10px] font-bold tracking-widest uppercase bg-slate-50 text-slate-600 rounded-full hover:bg-slate-100 transition-all border border-slate-200">
+                           + Add Manual
+                        </button>
+                     </div>
+                     
+                     <div className="space-y-4">
+                        {formData.variants.map((variant, index) => (
+                           <div key={variant.id} className="border border-slate-100 bg-slate-50/50 rounded-2xl p-5">
+                              <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                 <div className="w-[40px] h-[40px] bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center font-bold text-slate-400 text-xs">{index + 1}</div>
+                                 <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div>
+                                       <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">SKU</label>
+                                       <input required className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand" value={variant.sku} onChange={(e) => updateVariantField(variant.id, "sku", e.target.value)} />
+                                    </div>
+                                    <div>
+                                       <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Price (+/-)</label>
+                                       <input type="number" step="0.01" className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand" placeholder="Override" value={variant.priceOverride} onChange={(e) => updateVariantField(variant.id, "priceOverride", e.target.value)} />
+                                    </div>
+                                    <div>
+                                       <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Stock</label>
+                                       <input type="number" className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand" value={variant.stock} onChange={(e) => updateVariantField(variant.id, "stock", e.target.value)} />
+                                    </div>
+                                 </div>
+                                 <button type="button" onClick={() => removeVariant(variant.id)} className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-300 hover:text-red-500 hover:border-red-200 flex items-center justify-center transition-all">
+                                    <Trash2 size={16} />
+                                 </button>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+               )}
+            </div>
+            
+            {/* RIGHT COLUMN - SIDEBAR */}
+            <div className="w-full lg:w-[320px] xl:w-[380px] space-y-8 lg:sticky lg:top-32">
+               {/* PRICING & INVENTORY */}
+               <div className={cardBase}>
+                  <h3 className="text-sm font-extrabold text-slate-900 tracking-tight mb-5">Pricing & Inventory</h3>
+                  <div className="space-y-5">
+                     <div>
+                        <label className={labelBase}>Base Price (MMK) *</label>
+                        <div className="relative">
+                           <input required type="number" step="0.01" placeholder="0.00" className={inputBase} value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
+                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">MMK</span>
+                        </div>
+                     </div>
+                     <div>
+                        <label className={labelBase}>Default Stock</label>
+                        <input type="number" placeholder="0" className={inputBase} value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} />
+                     </div>
+                  </div>
+               </div>
+
+               {/* ORGANIZATION */}
+               <div className={cardBase}>
+                  <h3 className="text-sm font-extrabold text-slate-900 tracking-tight mb-5">Organization</h3>
+                  <div className="space-y-5">
+                     <div>
+                        <label className={labelBase}>Category *</label>
+                        <select className={`${inputBase} appearance-none`} value={formData.categoryId} onChange={(e) => setFormData({...formData, categoryId: e.target.value})}>
+                           {categories.map((c) => <option key={c.id} value={c.id}>{isMM ? c.name_mm : c.name_en}</option>)}
+                        </select>
+                     </div>
+                     <div>
+                        <label className={labelBase}>Brand</label>
+                        <select className={`${inputBase} appearance-none`} value={formData.brandId} onChange={(e) => setFormData({...formData, brandId: e.target.value})}>
+                           <option value="">{isMM ? "အမှတ်တံဆိပ် မရှိပါ" : "No Brand Link"}</option>
+                           {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </select>
+                     </div>
+                     <div>
+                        <label className={labelBase}>Audience</label>
+                        <select className={`${inputBase} appearance-none`} value={formData.audience} onChange={(e) => setFormData({...formData, audience: e.target.value as Audience})}>
+                           <option value="all">All Genders</option>
+                           <option value="man">Men</option>
+                           <option value="woman">Women</option>
+                           <option value="child">Kids</option>
+                        </select>
+                     </div>
+                  </div>
+               </div>
+               
+               {/* VIDEO */}
+               <div className={cardBase}>
+                  <div className="mb-5">
+                     <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">Product Media Link</h3>
+                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">TikTok / YouTube</p>
+                  </div>
+                  <div>
+                     <input type="url" placeholder="https://..." className={inputBase} value={formData.videoUrl} onChange={(e) => setFormData({...formData, videoUrl: e.target.value})} />
+                  </div>
+               </div>
+               
+               {/* Fixed bottom padding for mobile save button */}
+               <div className="md:hidden pt-4 pb-8">
+                  <button type="submit" disabled={isSubmitting} className="w-full py-4 rounded-full text-xs font-bold uppercase tracking-widest bg-brand text-white shadow-xl shadow-brand/20 btn-premium disabled:opacity-50">
+                     {isSubmitting ? "Saving..." : (isEditing ? "Save Changes" : "Create Product")}
+                  </button>
+               </div>
+            </div>
+
+         </form>
+      </div>
     </div>
   );
 };
-
-
-
-

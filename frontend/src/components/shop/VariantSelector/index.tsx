@@ -18,7 +18,9 @@ export const VariantSelector = ({
   onSelectVariant,
   onOptionSelect,
 }: VariantSelectorProps) => {
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
+    null,
+  );
   const groupsToDisplay = useVariantGroups(product);
 
   const hasVariants = product.variants && product.variants.length > 0;
@@ -46,12 +48,12 @@ export const VariantSelector = ({
         onOptionSelect={onOptionSelect}
       />
 
-      <VariantGrid
+      {/* <VariantGrid
         product={product}
         lang={lang}
         selectedVariantId={selectedVariantId}
         onVariantSelect={handleVariantSelect}
-      />
+      /> */}
 
       {selectedVariant && (
         <SelectedVariantSummary
